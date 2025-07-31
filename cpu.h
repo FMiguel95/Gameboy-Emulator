@@ -397,6 +397,204 @@ void opcode28();
 void opcode30();
 void opcode38();
 
+void CALL_n16() // 6 3
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 6;
+
+	static u16 address;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 6:
+		break;
+
+	case 5:
+		address = read8(cpu.reg16_PC++);
+		break;
+
+	case 4:
+		address |= ((u16)read8(cpu.reg16_PC++) << 8);
+		break;
+
+	case 3:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
+		break;
+
+	case 2:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
+		break;
+
+	case 1:
+		cpu.reg16_PC = address;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCD() { CALL_n16(); }
+
+void CALL_ccn16(condition cc) // 6 3
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 6;
+
+	static u16 address;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 6:
+		break;
+
+	case 5:
+		address = read8(cpu.reg16_PC++);
+		break;
+
+	case 4:
+		address |= ((u16)read8(cpu.reg16_PC++) << 8);
+		if (!check_condition(cc))
+			cpu.instruction_cycles_remain = 1;
+		break;
+
+	case 3:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
+		break;
+
+	case 2:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
+		break;
+
+	case 1:
+		cpu.reg16_PC = address;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeC4() { CALL_ccn16(NZ); }
+void opcodeCC() { CALL_ccn16(Z); }
+void opcodeD4() { CALL_ccn16(NC); }
+void opcodeDC() { CALL_ccn16(C); }
+
+void RET() // 4 1
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 4;
+
+	static u16 address;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 4:
+		break;
+
+	case 3:
+		address = read8(cpu.reg16_SP++);
+		break;
+
+	case 2:
+		address |= ((u16)read8(cpu.reg16_SP++) << 8);
+		break;
+
+	case 1:
+		cpu.reg16_PC = address;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeC9() { RET(); }
+
+void RET_cc(condition cc) // 5 1
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 5;
+
+	static u16 address;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 5:
+		break;
+
+	case 4:
+		if (!check_condition(cc))
+			cpu.instruction_cycles_remain = 1;
+		break;
+
+	case 3:
+		address = read8(cpu.reg16_SP++);
+		break;
+
+	case 2:
+		address |= ((u16)read8(cpu.reg16_SP++) << 8);
+		break;
+
+	case 1:
+		cpu.reg16_PC = address;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeC0() { RET_cc(NZ); }
+void opcodeC8() { RET_cc(Z); }
+void opcodeD0() { RET_cc(NC); }
+void opcodeD8() { RET_cc(C); }
+
+void RETI() // 4 1
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 4;
+
+	static u16 address;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 4:
+		break;
+
+	case 3:
+		address = read8(cpu.reg16_SP++);
+		break;
+
+	case 2:
+		address |= ((u16)read8(cpu.reg16_SP++) << 8);
+		break;
+
+	case 1:
+		cpu.reg16_PC = address;
+		cpu.IME = 0;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeD9() { RETI(); }
+
+void RST(u8 vec) // 4 1
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 4;
+
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 4:
+		break;
+
+	case 3:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
+		break;
+	
+	case 2:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
+		break;
+
+	case 1:
+		cpu.reg16_PC = vec;
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeC7() { RST(0x00); }
+void opcodeCF() { RST(0x08); }
+void opcodeD7() { RST(0x10); }
+void opcodeDF() { RST(0x18); }
+void opcodeE7() { RST(0x20); }
+void opcodeEF() { RST(0x28); }
+void opcodeF7() { RST(0x30); }
+void opcodeFF() { RST(0x38); }
+
 static void (*instruction_set[0x100])() = {
 	[0x00] = opcode00,
 	[0x01] = opcode01,
@@ -408,7 +606,7 @@ static void (*instruction_set[0x100])() = {
 	// [0x07] = opcode07,
 	[0x08] = opcode08,
 	[0x09] = opcode09,
-	// [0x0A] = opcode0A,
+	[0x0A] = opcode0A,
 	[0x0B] = opcode0B,
 	[0x0C] = opcode0C,
 	[0x0D] = opcode0D,
@@ -424,7 +622,7 @@ static void (*instruction_set[0x100])() = {
 	// [0x17] = opcode17,
 	[0x18] = opcode18,
 	[0x19] = opcode19,
-	// [0x1A] = opcode1A,
+	[0x1A] = opcode1A,
 	[0x1B] = opcode1B,
 	[0x1C] = opcode1C,
 	[0x1D] = opcode1D,
@@ -591,38 +789,38 @@ static void (*instruction_set[0x100])() = {
 	[0xBD] = opcodeBD,
 	[0xBE] = opcodeBE,
 	[0xBF] = opcodeBF,
-	// [0xC0] = opcodeC0,
+	[0xC0] = opcodeC0,
 	[0xC1] = opcodeC1,
 	[0xC2] = opcodeC2,
 	[0xC3] = opcodeC3,
-	// [0xC4] = opcodeC4,
+	[0xC4] = opcodeC4,
 	[0xC5] = opcodeC5,
 	[0xC6] = opcodeC6,
-	// [0xC7] = opcodeC7,
-	// [0xC8] = opcodeC8,
-	// [0xC9] = opcodeC9,
+	[0xC7] = opcodeC7,
+	[0xC8] = opcodeC8,
+	[0xC9] = opcodeC9,
 	[0xCA] = opcodeCA,
 	// [0xCB] = opcodeCB,
-	// [0xCC] = opcodeCC,
-	// [0xCD] = opcodeCD,
+	[0xCC] = opcodeCC,
+	[0xCD] = opcodeCD,
 	[0xCE] = opcodeCE,
-	// [0xCF] = opcodeCF,
-	// [0xD0] = opcodeD0,
+	[0xCF] = opcodeCF,
+	[0xD0] = opcodeD0,
 	[0xD1] = opcodeD1,
 	[0xD2] = opcodeD2,
 	[0xD3] = 0,
-	// [0xD4] = opcodeD4,
+	[0xD4] = opcodeD4,
 	[0xD5] = opcodeD5,
 	[0xD6] = opcodeD6,
-	// [0xD7] = opcodeD7,
-	// [0xD8] = opcodeD8,
-	// [0xD9] = opcodeD9,
+	[0xD7] = opcodeD7,
+	[0xD8] = opcodeD8,
+	[0xD9] = opcodeD9,
 	[0xDA] = opcodeDA,
 	[0xDB] = 0,
-	// [0xDC] = opcodeDC,
+	[0xDC] = opcodeDC,
 	[0xDD] = 0,
 	[0xDE] = opcodeDE,
-	// [0xDF] = opcodeDF,
+	[0xDF] = opcodeDF,
 	[0xE0] = opcodeE0,
 	[0xE1] = opcodeE1,
 	[0xE2] = opcodeE2,
@@ -630,7 +828,7 @@ static void (*instruction_set[0x100])() = {
 	[0xE4] = 0,
 	[0xE5] = opcodeE5,
 	[0xE6] = opcodeE6,
-	// [0xE7] = opcodeE7,
+	[0xE7] = opcodeE7,
 	[0xE8] = opcodeE8,
 	[0xE9] = opcodeE9,
 	[0xEA] = opcodeEA,
@@ -638,7 +836,7 @@ static void (*instruction_set[0x100])() = {
 	[0xEC] = 0,
 	[0xED] = 0,
 	[0xEE] = opcodeEE,
-	// [0xEF] = opcodeEF,
+	[0xEF] = opcodeEF,
 	[0xF0] = opcodeF0,
 	[0xF1] = opcodeF1,
 	[0xF2] = opcodeF2,
@@ -646,7 +844,7 @@ static void (*instruction_set[0x100])() = {
 	[0xF4] = 0,
 	[0xF5] = opcodeF5,
 	[0xF6] = opcodeF6,
-	// [0xF7] = opcodeF7,
+	[0xF7] = opcodeF7,
 	[0xF8] = opcodeF8,
 	// [0xF9] = opcodeF9,
 	[0xFA] = opcodeFA,
@@ -654,7 +852,7 @@ static void (*instruction_set[0x100])() = {
 	[0xFC] = 0,
 	[0xFD] = 0,
 	[0xFE] = opcodeFE,
-	// [0xFF] = opcodeFF
+	[0xFF] = opcodeFF
 };
 
 void cpu_tick();

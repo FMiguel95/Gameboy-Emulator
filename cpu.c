@@ -322,7 +322,7 @@ void LD_Ar16(u16* r) // 2 1
 	cpu.instruction_cycles_remain--;
 }
 void opcode0A() { LD_Ar16((u16*)cpu.reg16_BC); }
-void opcode1A() { LD_Ar16((u16*)cpu.reg16_BC); }
+void opcode1A() { LD_Ar16((u16*)cpu.reg16_DE); }
 
 void LD_An16() // 4 3
 {
@@ -1348,7 +1348,7 @@ void JP_cce8(condition cc) // 4 3
 	case 2:
 		n |= (u16)read8(cpu.reg16_PC++) << 8;
 		if (!check_condition(cc))
-			cpu.instruction_cycles_remain = 0;
+			cpu.instruction_cycles_remain = 1;
 		break;
 
 	case 1:
@@ -1400,7 +1400,7 @@ void JR_cce8(condition cc) // 3 2
 	case 2:
 		offset = read8(cpu.reg16_PC++);
 		if (!check_condition(cc))
-			cpu.instruction_cycles_remain = 0;
+			cpu.instruction_cycles_remain = 1;
 		break;
 
 	case 1:
