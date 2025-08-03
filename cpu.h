@@ -181,6 +181,9 @@ void opcode2A();
 void LD_n16SP();
 void opcode08();
 
+void LD_SPHL();
+void opcodeF9();
+
 void LD_SPHLe8();
 void opcodeF8();
 
@@ -397,213 +400,61 @@ void opcode28();
 void opcode30();
 void opcode38();
 
-void CALL_n16() // 6 3
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 6;
+void CALL_n16();
+void opcodeCD();
 
-	static u16 address;
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 6:
-		break;
+void CALL_ccn16(condition cc);
+void opcodeC4();
+void opcodeCC();
+void opcodeD4();
+void opcodeDC();
 
-	case 5:
-		address = read8(cpu.reg16_PC++);
-		break;
+void RET();
+void opcodeC9();
 
-	case 4:
-		address |= ((u16)read8(cpu.reg16_PC++) << 8);
-		break;
+void RET_cc(condition cc);
+void opcodeC0();
+void opcodeC8();
+void opcodeD0();
+void opcodeD8();
 
-	case 3:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
-		break;
+void RETI();
+void opcodeD9();
 
-	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
-		break;
+void RST(u8 vec);
+void opcodeC7();
+void opcodeCF();
+void opcodeD7();
+void opcodeDF();
+void opcodeE7();
+void opcodeEF();
+void opcodeF7();
+void opcodeFF();
 
-	case 1:
-		cpu.reg16_PC = address;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeCD() { CALL_n16(); }
+void DDA();
+void opcode27();
 
-void CALL_ccn16(condition cc) // 6 3
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 6;
+void RLCA();
+void opcode07();
 
-	static u16 address;
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 6:
-		break;
+void RRCA();
+void opcode0F();
 
-	case 5:
-		address = read8(cpu.reg16_PC++);
-		break;
+void RLA();
+void opcode17();
 
-	case 4:
-		address |= ((u16)read8(cpu.reg16_PC++) << 8);
-		if (!check_condition(cc))
-			cpu.instruction_cycles_remain = 1;
-		break;
-
-	case 3:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
-		break;
-
-	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
-		break;
-
-	case 1:
-		cpu.reg16_PC = address;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeC4() { CALL_ccn16(NZ); }
-void opcodeCC() { CALL_ccn16(Z); }
-void opcodeD4() { CALL_ccn16(NC); }
-void opcodeDC() { CALL_ccn16(C); }
-
-void RET() // 4 1
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 4;
-
-	static u16 address;
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 4:
-		break;
-
-	case 3:
-		address = read8(cpu.reg16_SP++);
-		break;
-
-	case 2:
-		address |= ((u16)read8(cpu.reg16_SP++) << 8);
-		break;
-
-	case 1:
-		cpu.reg16_PC = address;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeC9() { RET(); }
-
-void RET_cc(condition cc) // 5 1
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 5;
-
-	static u16 address;
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 5:
-		break;
-
-	case 4:
-		if (!check_condition(cc))
-			cpu.instruction_cycles_remain = 1;
-		break;
-
-	case 3:
-		address = read8(cpu.reg16_SP++);
-		break;
-
-	case 2:
-		address |= ((u16)read8(cpu.reg16_SP++) << 8);
-		break;
-
-	case 1:
-		cpu.reg16_PC = address;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeC0() { RET_cc(NZ); }
-void opcodeC8() { RET_cc(Z); }
-void opcodeD0() { RET_cc(NC); }
-void opcodeD8() { RET_cc(C); }
-
-void RETI() // 4 1
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 4;
-
-	static u16 address;
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 4:
-		break;
-
-	case 3:
-		address = read8(cpu.reg16_SP++);
-		break;
-
-	case 2:
-		address |= ((u16)read8(cpu.reg16_SP++) << 8);
-		break;
-
-	case 1:
-		cpu.reg16_PC = address;
-		cpu.IME = 0;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeD9() { RETI(); }
-
-void RST(u8 vec) // 4 1
-{
-	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 4;
-
-	switch (cpu.instruction_cycles_remain)
-	{
-	case 4:
-		break;
-
-	case 3:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
-		break;
-	
-	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
-		break;
-
-	case 1:
-		cpu.reg16_PC = vec;
-		break;
-	}
-	cpu.instruction_cycles_remain--;
-}
-void opcodeC7() { RST(0x00); }
-void opcodeCF() { RST(0x08); }
-void opcodeD7() { RST(0x10); }
-void opcodeDF() { RST(0x18); }
-void opcodeE7() { RST(0x20); }
-void opcodeEF() { RST(0x28); }
-void opcodeF7() { RST(0x30); }
-void opcodeFF() { RST(0x38); }
+void RRA();
+void opcode1F();
 
 static void (*instruction_set[0x100])() = {
 	[0x00] = opcode00,
 	[0x01] = opcode01,
-	// [0x02] = opcode02,
+	[0x02] = opcode02,
 	[0x03] = opcode03,
 	[0x04] = opcode04,
 	[0x05] = opcode05,
 	[0x06] = opcode06,
-	// [0x07] = opcode07,
+	[0x07] = opcode07,
 	[0x08] = opcode08,
 	[0x09] = opcode09,
 	[0x0A] = opcode0A,
@@ -611,15 +462,15 @@ static void (*instruction_set[0x100])() = {
 	[0x0C] = opcode0C,
 	[0x0D] = opcode0D,
 	[0x0E] = opcode0E,
-	// [0x0F] = opcode0F,
-	// [0x10] = opcode10,
+	[0x0F] = opcode0F,
+	// [0x10] = opcode10, // STOP
 	[0x11] = opcode11,
-	// [0x12] = opcode12,
+	[0x12] = opcode12,
 	[0x13] = opcode13,
 	[0x14] = opcode14,
 	[0x15] = opcode15,
 	[0x16] = opcode16,
-	// [0x17] = opcode17,
+	[0x17] = opcode17,
 	[0x18] = opcode18,
 	[0x19] = opcode19,
 	[0x1A] = opcode1A,
@@ -627,16 +478,15 @@ static void (*instruction_set[0x100])() = {
 	[0x1C] = opcode1C,
 	[0x1D] = opcode1D,
 	[0x1E] = opcode1E,
-	// [0x1F] = opcode1F,
+	[0x1F] = opcode1F,
 	[0x20] = opcode20,
 	[0x21] = opcode21,
 	[0x22] = opcode22,
 	[0x23] = opcode23,
 	[0x24] = opcode24,
 	[0x25] = opcode25,
-	// [0x26] = opcode26,
 	[0x26] = opcode26,
-	// [0x27] = opcode27,
+	[0x27] = opcode27,
 	[0x28] = opcode28,
 	[0x29] = opcode29,
 	[0x2A] = opcode2A,
@@ -715,7 +565,7 @@ static void (*instruction_set[0x100])() = {
 	[0x73] = opcode73,
 	[0x74] = opcode74,
 	[0x75] = opcode75,
-	// [0x76] = opcode76,
+	// [0x76] = opcode76, // HALT
 	[0x77] = opcode77,
 	[0x78] = opcode78,
 	[0x79] = opcode79,
@@ -800,7 +650,7 @@ static void (*instruction_set[0x100])() = {
 	[0xC8] = opcodeC8,
 	[0xC9] = opcodeC9,
 	[0xCA] = opcodeCA,
-	// [0xCB] = opcodeCB,
+	// [0xCB] = opcodeCB, // PREFIX
 	[0xCC] = opcodeCC,
 	[0xCD] = opcodeCD,
 	[0xCE] = opcodeCE,
@@ -846,13 +696,272 @@ static void (*instruction_set[0x100])() = {
 	[0xF6] = opcodeF6,
 	[0xF7] = opcodeF7,
 	[0xF8] = opcodeF8,
-	// [0xF9] = opcodeF9,
+	[0xF9] = opcodeF9,
 	[0xFA] = opcodeFA,
 	[0xFB] = opcodeFB,
 	[0xFC] = 0,
 	[0xFD] = 0,
 	[0xFE] = opcodeFE,
 	[0xFF] = opcodeFF
+};
+
+static void (*CB_set[0x100])() = {
+	// [0x00] = opcodeCB00,
+	// [0x01] = opcodeCB01,
+	// [0x02] = opcodeCB02,
+	// [0x03] = opcodeCB03,
+	// [0x04] = opcodeCB04,
+	// [0x05] = opcodeCB05,
+	// [0x06] = opcodeCB06,
+	// [0x07] = opcodeCB07,
+	// [0x08] = opcodeCB08,
+	// [0x09] = opcodeCB09,
+	// [0x0A] = opcodeCB0A,
+	// [0x0B] = opcodeCB0B,
+	// [0x0C] = opcodeCB0C,
+	// [0x0D] = opcodeCB0D,
+	// [0x0E] = opcodeCB0E,
+	// [0x0F] = opcodeCB0F,
+	// [0x10] = opcodeCB10,
+	// [0x11] = opcodeCB11,
+	// [0x12] = opcodeCB12,
+	// [0x13] = opcodeCB13,
+	// [0x14] = opcodeCB14,
+	// [0x15] = opcodeCB15,
+	// [0x16] = opcodeCB16,
+	// [0x17] = opcodeCB17,
+	// [0x18] = opcodeCB18,
+	// [0x19] = opcodeCB19,
+	// [0x1A] = opcodeCB1A,
+	// [0x1B] = opcodeCB1B,
+	// [0x1C] = opcodeCB1C,
+	// [0x1D] = opcodeCB1D,
+	// [0x1E] = opcodeCB1E,
+	// [0x1F] = opcodeCB1F,
+	// [0x20] = opcodeCB20,
+	// [0x21] = opcodeCB21,
+	// [0x22] = opcodeCB22,
+	// [0x23] = opcodeCB23,
+	// [0x24] = opcodeCB24,
+	// [0x25] = opcodeCB25,
+	// [0x26] = opcodeCB26,
+	// [0x27] = opcodeCB27,
+	// [0x28] = opcodeCB28,
+	// [0x29] = opcodeCB29,
+	// [0x2A] = opcodeCB2A,
+	// [0x2B] = opcodeCB2B,
+	// [0x2C] = opcodeCB2C,
+	// [0x2D] = opcodeCB2D,
+	// [0x2E] = opcodeCB2E,
+	// [0x2F] = opcodeCB2F,
+	// [0x30] = opcodeCB30,
+	// [0x31] = opcodeCB31,
+	// [0x32] = opcodeCB32,
+	// [0x33] = opcodeCB33,
+	// [0x34] = opcodeCB34,
+	// [0x35] = opcodeCB35,
+	// [0x36] = opcodeCB36,
+	// [0x37] = opcodeCB37,
+	// [0x38] = opcodeCB38,
+	// [0x39] = opcodeCB39,
+	// [0x3A] = opcodeCB3A,
+	// [0x3B] = opcodeCB3B,
+	// [0x3C] = opcodeCB3C,
+	// [0x3D] = opcodeCB3D,
+	// [0x3E] = opcodeCB3E,
+	// [0x3F] = opcodeCB3F,
+	// [0x40] = opcodeCB40,
+	// [0x41] = opcodeCB41,
+	// [0x42] = opcodeCB42,
+	// [0x43] = opcodeCB43,
+	// [0x44] = opcodeCB44,
+	// [0x45] = opcodeCB45,
+	// [0x46] = opcodeCB46,
+	// [0x47] = opcodeCB47,
+	// [0x48] = opcodeCB48,
+	// [0x49] = opcodeCB49,
+	// [0x4A] = opcodeCB4A,
+	// [0x4B] = opcodeCB4B,
+	// [0x4C] = opcodeCB4C,
+	// [0x4D] = opcodeCB4D,
+	// [0x4E] = opcodeCB4E,
+	// [0x4F] = opcodeCB4F,
+	// [0x50] = opcodeCB50,
+	// [0x51] = opcodeCB51,
+	// [0x52] = opcodeCB52,
+	// [0x53] = opcodeCB53,
+	// [0x54] = opcodeCB54,
+	// [0x55] = opcodeCB55,
+	// [0x56] = opcodeCB56,
+	// [0x57] = opcodeCB57,
+	// [0x58] = opcodeCB58,
+	// [0x59] = opcodeCB59,
+	// [0x5A] = opcodeCB5A,
+	// [0x5B] = opcodeCB5B,
+	// [0x5C] = opcodeCB5C,
+	// [0x5D] = opcodeCB5D,
+	// [0x5E] = opcodeCB5E,
+	// [0x5F] = opcodeCB5F,
+	// [0x60] = opcodeCB60,
+	// [0x61] = opcodeCB61,
+	// [0x62] = opcodeCB62,
+	// [0x63] = opcodeCB63,
+	// [0x64] = opcodeCB64,
+	// [0x65] = opcodeCB65,
+	// [0x66] = opcodeCB66,
+	// [0x67] = opcodeCB67,
+	// [0x68] = opcodeCB68,
+	// [0x69] = opcodeCB69,
+	// [0x6A] = opcodeCB6A,
+	// [0x6B] = opcodeCB6B,
+	// [0x6C] = opcodeCB6C,
+	// [0x6D] = opcodeCB6D,
+	// [0x6E] = opcodeCB6E,
+	// [0x6F] = opcodeCB6F,
+	// [0x70] = opcodeCB70,
+	// [0x71] = opcodeCB71,
+	// [0x72] = opcodeCB72,
+	// [0x73] = opcodeCB73,
+	// [0x74] = opcodeCB74,
+	// [0x75] = opcodeCB75,
+	// [0x76] = opcodeCB76,
+	// [0x77] = opcodeCB77,
+	// [0x78] = opcodeCB78,
+	// [0x79] = opcodeCB79,
+	// [0x7A] = opcodeCB7A,
+	// [0x7B] = opcodeCB7B,
+	// [0x7C] = opcodeCB7C,
+	// [0x7D] = opcodeCB7D,
+	// [0x7E] = opcodeCB7E,
+	// [0x7F] = opcodeCB7F,
+	// [0x80] = opcodeCB80,
+	// [0x81] = opcodeCB81,
+	// [0x82] = opcodeCB82,
+	// [0x83] = opcodeCB83,
+	// [0x84] = opcodeCB84,
+	// [0x85] = opcodeCB85,
+	// [0x86] = opcodeCB86,
+	// [0x87] = opcodeCB87,
+	// [0x88] = opcodeCB88,
+	// [0x89] = opcodeCB89,
+	// [0x8A] = opcodeCB8A,
+	// [0x8B] = opcodeCB8B,
+	// [0x8C] = opcodeCB8C,
+	// [0x8D] = opcodeCB8D,
+	// [0x8E] = opcodeCB8E,
+	// [0x8F] = opcodeCB8F,
+	// [0x90] = opcodeCB90,
+	// [0x91] = opcodeCB91,
+	// [0x92] = opcodeCB92,
+	// [0x93] = opcodeCB93,
+	// [0x94] = opcodeCB94,
+	// [0x95] = opcodeCB95,
+	// [0x96] = opcodeCB96,
+	// [0x97] = opcodeCB97,
+	// [0x98] = opcodeCB98,
+	// [0x99] = opcodeCB99,
+	// [0x9A] = opcodeCB9A,
+	// [0x9B] = opcodeCB9B,
+	// [0x9C] = opcodeCB9C,
+	// [0x9D] = opcodeCB9D,
+	// [0x9E] = opcodeCB9E,
+	// [0x9F] = opcodeCB9F,
+	// [0xA0] = opcodeCBA0,
+	// [0xA1] = opcodeCBA1,
+	// [0xA2] = opcodeCBA2,
+	// [0xA3] = opcodeCBA3,
+	// [0xA4] = opcodeCBA4,
+	// [0xA5] = opcodeCBA5,
+	// [0xA6] = opcodeCBA6,
+	// [0xA7] = opcodeCBA7,
+	// [0xA8] = opcodeCBA8,
+	// [0xA9] = opcodeCBA9,
+	// [0xAA] = opcodeCBAA,
+	// [0xAB] = opcodeCBAB,
+	// [0xAC] = opcodeCBAC,
+	// [0xAD] = opcodeCBAD,
+	// [0xAE] = opcodeCBAE,
+	// [0xAF] = opcodeCBAF,
+	// [0xB0] = opcodeCBB0,
+	// [0xB1] = opcodeCBB1,
+	// [0xB2] = opcodeCBB2,
+	// [0xB3] = opcodeCBB3,
+	// [0xB4] = opcodeCBB4,
+	// [0xB5] = opcodeCBB5,
+	// [0xB6] = opcodeCBB6,
+	// [0xB7] = opcodeCBB7,
+	// [0xB8] = opcodeCBB8,
+	// [0xB9] = opcodeCBB9,
+	// [0xBA] = opcodeCBBA,
+	// [0xBB] = opcodeCBBB,
+	// [0xBC] = opcodeCBBC,
+	// [0xBD] = opcodeCBBD,
+	// [0xBE] = opcodeCBBE,
+	// [0xBF] = opcodeCBBF,
+	// [0xC0] = opcodeCBC0,
+	// [0xC1] = opcodeCBC1,
+	// [0xC2] = opcodeCBC2,
+	// [0xC3] = opcodeCBC3,
+	// [0xC4] = opcodeCBC4,
+	// [0xC5] = opcodeCBC5,
+	// [0xC6] = opcodeCBC6,
+	// [0xC7] = opcodeCBC7,
+	// [0xC8] = opcodeCBC8,
+	// [0xC9] = opcodeCBC9,
+	// [0xCA] = opcodeCBCA,
+	// [0xCB] = opcodeCBCB,
+	// [0xCC] = opcodeCBCC,
+	// [0xCD] = opcodeCBCD,
+	// [0xCE] = opcodeCBCE,
+	// [0xCF] = opcodeCBCF,
+	// [0xD0] = opcodeCBD0,
+	// [0xD1] = opcodeCBD1,
+	// [0xD2] = opcodeCBD2,
+	// [0xD3] = opcodeCBD3,
+	// [0xD4] = opcodeCBD4,
+	// [0xD5] = opcodeCBD5,
+	// [0xD6] = opcodeCBD6,
+	// [0xD7] = opcodeCBD7,
+	// [0xD8] = opcodeCBD8,
+	// [0xD9] = opcodeCBD9,
+	// [0xDA] = opcodeCBDA,
+	// [0xDB] = opcodeCBDB,
+	// [0xDC] = opcodeCBDC,
+	// [0xDD] = opcodeCBDE,
+	// [0xDE] = opcodeCBDE,
+	// [0xDF] = opcodeCBDF,
+	// [0xE0] = opcodeCBE0,
+	// [0xE1] = opcodeCBE1,
+	// [0xE2] = opcodeCBE2,
+	// [0xE3] = opcodeCBE3,
+	// [0xE4] = opcodeCBE4,
+	// [0xE5] = opcodeCBE5,
+	// [0xE6] = opcodeCBE6,
+	// [0xE7] = opcodeCBE7,
+	// [0xE8] = opcodeCBE8,
+	// [0xE9] = opcodeCBE9,
+	// [0xEA] = opcodeCBEA,
+	// [0xEB] = opcodeCBEB,
+	// [0xEC] = opcodeCBEC,
+	// [0xED] = opcodeCBED,
+	// [0xEE] = opcodeCBEE,
+	// [0xEF] = opcodeCBEF,
+	// [0xF0] = opcodeCBF0,
+	// [0xF1] = opcodeCBF1,
+	// [0xF2] = opcodeCBF2,
+	// [0xF3] = opcodeCBF3,
+	// [0xF4] = opcodeCBF4,
+	// [0xF5] = opcodeCBF5,
+	// [0xF6] = opcodeCBF6,
+	// [0xF7] = opcodeCBF7,
+	// [0xF8] = opcodeCBF8,
+	// [0xF9] = opcodeCBF9,
+	// [0xFA] = opcodeCBFA,
+	// [0xFB] = opcodeCBFB,
+	// [0xFC] = opcodeCBFC,
+	// [0xFD] = opcodeCBFD,
+	// [0xFE] = opcodeCBFE,
+	// [0xFF] = opcodeCBFF
 };
 
 void cpu_tick();

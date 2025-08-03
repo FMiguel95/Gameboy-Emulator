@@ -2,5 +2,5 @@
 
 int main()
 {
-	read_rom("roms/Tetris (World) (Rev 1).gb");
+	read_rom("roms/dmg_boot.bin");
 }
