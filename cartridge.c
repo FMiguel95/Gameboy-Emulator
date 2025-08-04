@@ -1,4 +1,5 @@
 #include "cartridge.h"
+cartridge_t cartridge;
 
 int read_rom(const char* path)
 {
@@ -6,7 +7,7 @@ int read_rom(const char* path)
 	if (!file)
 	{
 		perror(path);
-		return 1;
+		return 0;
 	}
 
 	fseek(file, 0l, SEEK_END);
@@ -18,7 +19,7 @@ int read_rom(const char* path)
 	if (!rom)
 	{
 		fprintf(stderr, "Fatal: failed to allocate %lu bytes\n", rom_length);
-		return 1;
+		return 0;
 	}
 
 	fread(rom, 1, rom_length, file);
@@ -67,5 +68,5 @@ int read_rom(const char* path)
 	printf("global_checksum: %u\n", cartridge.global_checksum);
 	printf("calculated_global_checksum: %u\n", calculated_global_checksum);
 
-	return 0;
+	return 1;
 }

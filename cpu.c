@@ -1,4 +1,60 @@
 #include "cpu.h"
+cpu_t cpu;
+
+int init_cpu()
+{
+	cpu = (cpu_t){0};
+	cpu.reg8_A = ((u8*)(&cpu.reg16_AF)) + 1;
+	cpu.reg8_F = (u8*)(&cpu.reg16_AF);
+	cpu.reg8_B = ((u8*)(&cpu.reg16_BC)) + 1;
+	cpu.reg8_C = (u8*)(&cpu.reg16_BC);
+	cpu.reg8_D = ((u8*)(&cpu.reg16_DE)) + 1;
+	cpu.reg8_E = (u8*)(&cpu.reg16_DE);
+	cpu.reg8_H = ((u8*)(&cpu.reg16_HL)) + 1;
+	cpu.reg8_L = (u8*)(&cpu.reg16_HL);
+	cpu.reg8_S = ((u8*)(&cpu.reg16_SP)) + 1;
+	cpu.reg8_P = (u8*)(&cpu.reg16_SP);
+
+	return 0;
+}
+
+void cpu_tick()
+{
+	static void (*instruction_to_execute)();
+
+	if (cpu.instruction_cycles_remain == 0)
+	{
+		cpu_print_status();
+		if (!cpu.prefix_instruction)
+		{
+			instruction_to_execute = instruction_set[read8(cpu.reg16_PC++)];
+		}
+		else
+		{
+			instruction_to_execute = CB_set[read8(cpu.reg16_PC++)];
+			cpu.prefix_instruction = 0;
+		}
+	}
+	instruction_to_execute();
+}
+
+void cpu_print_status()
+{
+	printf("B: 0x%.2X\n", *cpu.reg8_B);
+	printf("C: 0x%.2X\n", *cpu.reg8_C);
+	printf("D: 0x%.2X\n", *cpu.reg8_D);
+	printf("E: 0x%.2X\n", *cpu.reg8_E);
+	printf("HL: 0x%.4X\n", cpu.reg16_HL);
+	printf("A: 0x%.2X\n", *cpu.reg8_A);
+	printf("flag z: %u\n", get_flag(flag_z));
+	printf("flag n: %u\n", get_flag(flag_n));
+	printf("flag h: %u\n", get_flag(flag_h));
+	printf("flag c: %u\n", get_flag(flag_c));
+	printf("PC: 0x%.4X\n", cpu.reg16_PC);
+	printf("SP: 0x%.4X\n", cpu.reg16_SP);
+	printf(">> %s\n", opcode_decode[read8(cpu.reg16_PC)]);
+	getchar();
+}
 
 u8 get_flag(f_flag bit)
 {
@@ -7,7 +63,11 @@ u8 get_flag(f_flag bit)
 
 void set_flag(f_flag bit, u8 val)
 {
-	*cpu.reg8_F |= val << bit;
+	if (val)
+		*cpu.reg8_F |= (1 << bit);
+	else
+		*cpu.reg8_F &= ~(1 << bit);
+
 }
 
 int check_condition(condition cc)
@@ -153,9 +213,9 @@ void LD_r16n16(u16* r) // 3 3
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode01() { LD_r16n16((u16*)cpu.reg16_BC); }
-void opcode11() { LD_r16n16((u16*)cpu.reg16_DE); }
-void opcode21() { LD_r16n16((u16*)cpu.reg16_HL); }
+void opcode01() { LD_r16n16(&cpu.reg16_BC); }
+void opcode11() { LD_r16n16(&cpu.reg16_DE); }
+void opcode21() { LD_r16n16(&cpu.reg16_HL); }
 void opcode31() { LD_r16n16(&cpu.reg16_SP); }
 
 void LD_HLr8(u8* r) // 2 1
@@ -169,7 +229,7 @@ void LD_HLr8(u8* r) // 2 1
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), *r);
+		write8(cpu.reg16_HL, *r);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -198,7 +258,7 @@ void LD_HLn8() // 3 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), n);
+		write8(cpu.reg16_HL, n);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -217,7 +277,7 @@ void LD_r8HL(u8* r) // 2 1
 		break;
 
 	case 1:
-		*r = read8(*((u16*)cpu.reg16_HL));
+		*r = read8(cpu.reg16_HL);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -246,8 +306,8 @@ void LD_r16A(u16* r) // 2 1
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode02() { LD_r16A((u16*)cpu.reg16_BC); }
-void opcode12() { LD_r16A((u16*)cpu.reg16_DE); }
+void opcode02() { LD_r16A(&cpu.reg16_BC); }
+void opcode12() { LD_r16A(&cpu.reg16_DE); }
 
 void LD_n16A() // 4 3
 {
@@ -333,8 +393,8 @@ void LD_Ar16(u16* r) // 2 1
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode0A() { LD_Ar16((u16*)cpu.reg16_BC); }
-void opcode1A() { LD_Ar16((u16*)cpu.reg16_DE); }
+void opcode0A() { LD_Ar16(&cpu.reg16_BC); }
+void opcode1A() { LD_Ar16(&cpu.reg16_DE); }
 
 void LD_An16() // 4 3
 {
@@ -415,8 +475,8 @@ void LD_HLIA() // 2 1
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), *cpu.reg8_A);
-		*((u16*)cpu.reg16_HL) = *((u16*)cpu.reg16_HL) + 1;
+		write8(cpu.reg16_HL, *cpu.reg8_A);
+		cpu.reg16_HL = cpu.reg16_HL + 1;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -434,8 +494,8 @@ void LD_HLDA() // 2 1
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), *cpu.reg8_A);
-		*((u16*)cpu.reg16_HL) = *((u16*)cpu.reg16_HL) - 1;
+		write8(cpu.reg16_HL, *cpu.reg8_A);
+		cpu.reg16_HL = cpu.reg16_HL - 1;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -453,8 +513,8 @@ void LD_AHLD() // 2 1
 		break;
 
 	case 1:
-		*cpu.reg8_A = read8(*((u16*)cpu.reg16_HL));
-		*((u16*)cpu.reg16_HL) = *((u16*)cpu.reg16_HL) - 1;
+		*cpu.reg8_A = read8(cpu.reg16_HL);
+		cpu.reg16_HL = cpu.reg16_HL - 1;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -472,8 +532,8 @@ void LD_AHLI() // 2 1
 		break;
 
 	case 1:
-		*cpu.reg8_A = read8(*((u16*)cpu.reg16_HL));
-		*((u16*)cpu.reg16_HL) = *((u16*)cpu.reg16_HL) + 1;
+		*cpu.reg8_A = read8(cpu.reg16_HL);
+		cpu.reg16_HL = cpu.reg16_HL + 1;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -522,7 +582,7 @@ void LD_SPHL() // 2 1
 		break;
 
 	case 1:
-		cpu.reg16_SP = *((u16*)cpu.reg16_HL);
+		cpu.reg16_SP = cpu.reg16_HL;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -550,7 +610,7 @@ void LD_SPHLe8() // 3 2
 		break;
 
 	case 1:
-		*((u16*)cpu.reg16_HL) = res;
+		cpu.reg16_HL = res;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -585,7 +645,7 @@ void ADC_AHL() // 2 1
 		break;
 
 	case 1:
-		u8 val = read8(*((u16*)cpu.reg16_HL));
+		u8 val = read8(cpu.reg16_HL);
 		set_flag(flag_h, ((*cpu.reg8_A & 0xF) + (val & 0xF) + get_flag(flag_c)) > 0xF);
 		u16 res = *cpu.reg8_A + val + get_flag(flag_c);
 		*cpu.reg8_A = (u8)res;
@@ -650,7 +710,7 @@ void ADD_AHL() // 2 1
 		break;
 
 	case 1:
-		u8 val = read8(*((u16*)cpu.reg16_HL));
+		u8 val = read8(cpu.reg16_HL);
 		set_flag(flag_h, ((*cpu.reg8_A & 0xF) + (val & 0xF)) > 0xF);
 		u16 res = *cpu.reg8_A + val;
 		*cpu.reg8_A = (u8)res;
@@ -687,7 +747,7 @@ void ADD_An8() // 2 2
 }
 void opcodeC6() { ADD_An8(); }
 
-void ADD_HLr16(u8* r) // 2 1
+void ADD_HLr16(u8* h, u8* l) // 2 1
 {
 	if (!cpu.instruction_cycles_remain)
 		cpu.instruction_cycles_remain = 2;
@@ -698,11 +758,11 @@ void ADD_HLr16(u8* r) // 2 1
 		break;
 
 	case 1:
-		u16 res = *cpu.reg8_L + r[1];
+		u16 res = *cpu.reg8_L + *l;
 		*cpu.reg8_L = (u8)res;
 		set_flag(flag_c, res > 0xFF);
-		set_flag(flag_h, ((*cpu.reg8_H & 0xF) + (r[0] & 0xF)) + get_flag(flag_c) > 0xF);
-		res = *cpu.reg8_H + r[0] + get_flag(flag_c);
+		set_flag(flag_h, ((*cpu.reg8_H & 0xF) + (*h & 0xF)) + get_flag(flag_c) > 0xF);
+		res = *cpu.reg8_H + *h + get_flag(flag_c);
 		*cpu.reg8_H = (u8)res;
 		set_flag(flag_n, 0);
 		set_flag(flag_c, res > 0xFF);
@@ -710,10 +770,10 @@ void ADD_HLr16(u8* r) // 2 1
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode09() { ADD_HLr16(cpu.reg16_BC); }
-void opcode19() { ADD_HLr16(cpu.reg16_DE); }
-void opcode29() { ADD_HLr16(cpu.reg16_HL); }
-void opcode39() { ADD_HLr16((u8*)&cpu.reg16_SP); }
+void opcode09() { ADD_HLr16(cpu.reg8_B, cpu.reg8_C); }
+void opcode19() { ADD_HLr16(cpu.reg8_D, cpu.reg8_E); }
+void opcode29() { ADD_HLr16(cpu.reg8_H, cpu.reg8_L); }
+void opcode39() { ADD_HLr16(cpu.reg8_S, cpu.reg8_P); }
 
 void ADD_SPe8() // 4 2
 {
@@ -752,7 +812,7 @@ void SBC_Ar8(u8* r) // 1 1
 	set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((*r & 0xF) + carry));
 	set_flag(flag_c, (int)*cpu.reg8_A - (int)*r - (int)carry < 0);
 	*cpu.reg8_A = *cpu.reg8_A - *r - carry;
-	set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_n, 1);
 }
 void opcode98() { SBC_Ar8(cpu.reg8_B); }
@@ -774,12 +834,12 @@ void SBC_AHL() // 2 1
 		break;
 
 	case 1:
-		u8 val = read8(*((u16*)cpu.reg16_HL));
+		u8 val = read8(cpu.reg16_HL);
 		u8 carry = get_flag(flag_c);
 		set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((val & 0xF) + carry));
 		set_flag(flag_c, (int)*cpu.reg8_A - (int)val - (int)carry < 0);
 		*cpu.reg8_A = *cpu.reg8_A - val - carry;
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 1);
 		break;
 	}
@@ -803,7 +863,7 @@ void SBC_An8() // 2 2
 		set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((val & 0xF) + carry));
 		set_flag(flag_c, (int)*cpu.reg8_A - (int)val - (int)carry < 0);
 		*cpu.reg8_A = *cpu.reg8_A - val - carry;
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 1);
 		break;
 	}
@@ -816,7 +876,7 @@ void SUB_Ar8(u8* r) // 1 1
 	set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((*r & 0xF)));
 	set_flag(flag_c, (int)*cpu.reg8_A - (int)*r < 0);
 	*cpu.reg8_A = *cpu.reg8_A - *r;
-	set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_n, 1);
 }
 void opcode90() { SUB_Ar8(cpu.reg8_B); }
@@ -838,11 +898,11 @@ void SUB_AHL() // 2 1
 		break;
 
 	case 1:
-		u8 val = read8(*((u16*)cpu.reg16_HL));
+		u8 val = read8(cpu.reg16_HL);
 		set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((val & 0xF)));
 		set_flag(flag_c, (int)*cpu.reg8_A - (int)val < 0);
 		*cpu.reg8_A = *cpu.reg8_A - val;
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 1);
 		break;
 	}
@@ -865,7 +925,7 @@ void SUB_An8() // 2 2
 		set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((val & 0xF)));
 		set_flag(flag_c, (int)*cpu.reg8_A - (int)val < 0);
 		*cpu.reg8_A = *cpu.reg8_A - val;
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 1);
 		break;
 	}
@@ -877,7 +937,7 @@ void CP_Ar8(u8* r) // 1 1
 {
 	set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((*r & 0xF)));
 	set_flag(flag_c, (int)*cpu.reg8_A - (int)*r < 0);
-	set_flag(flag_z, *cpu.reg8_A == *r ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == *r);
 	set_flag(flag_n, 1);
 }
 void opcodeB8() { CP_Ar8(cpu.reg8_B); }
@@ -899,7 +959,7 @@ void CP_AHL() // 2 1
 		break;
 
 	case 1:
-		u8 val = read8(*((u16*)cpu.reg16_HL));
+		u8 val = read8(cpu.reg16_HL);
 		set_flag(flag_h, (*cpu.reg8_A & 0xF) < ((val & 0xF)));
 		set_flag(flag_c, (int)*cpu.reg8_A - (int)val < 0);
 		set_flag(flag_z, *cpu.reg8_A == val);
@@ -959,7 +1019,7 @@ void INC_HL() // 3 1
 		break;
 
 	case 2:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		val++;
 		break;
 
@@ -990,9 +1050,9 @@ void INC_r16(u16* r) // 2 1
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode03() { INC_r16((u16*)cpu.reg16_BC); }
-void opcode13() { INC_r16((u16*)cpu.reg16_DE); }
-void opcode23() { INC_r16((u16*)cpu.reg16_HL); }
+void opcode03() { INC_r16(&cpu.reg16_BC); }
+void opcode13() { INC_r16(&cpu.reg16_DE); }
+void opcode23() { INC_r16(&cpu.reg16_HL); }
 void opcode33() { INC_r16(&cpu.reg16_SP); }
 
 void DEC_r8(u8* r) // 1 1
@@ -1022,7 +1082,7 @@ void DEC_HL() // 3 1
 		break;
 
 	case 2:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		val--;
 		break;
 
@@ -1053,15 +1113,15 @@ void DEC_r16(u16* r) // 2 1
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcode0B() { DEC_r16((u16*)cpu.reg16_BC); }
-void opcode1B() { DEC_r16((u16*)cpu.reg16_DE); }
-void opcode2B() { DEC_r16((u16*)cpu.reg16_HL); }
+void opcode0B() { DEC_r16(&cpu.reg16_BC); }
+void opcode1B() { DEC_r16(&cpu.reg16_DE); }
+void opcode2B() { DEC_r16(&cpu.reg16_HL); }
 void opcode3B() { DEC_r16(&cpu.reg16_SP); }
 
 void AND_Ar8(u8* r) // 1 1
 {
 	*cpu.reg8_A = *cpu.reg8_A & *r;
-	set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_n, 0);
 	set_flag(flag_h, 1);
 	set_flag(flag_c, 0);
@@ -1085,8 +1145,8 @@ void AND_AHL() // 2 1
 		break;
 
 	case 1:
-		*cpu.reg8_A = *cpu.reg8_A & read8(*((u16*)cpu.reg16_HL));
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		*cpu.reg8_A = *cpu.reg8_A & read8(cpu.reg16_HL);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 1);
 		set_flag(flag_c, 0);
@@ -1108,7 +1168,7 @@ void AND_An8() // 2 2
 
 	case 1:
 		*cpu.reg8_A = *cpu.reg8_A & read8(cpu.reg16_PC++);
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 1);
 		set_flag(flag_c, 0);
@@ -1129,7 +1189,7 @@ void opcode2F() { CPL(); }
 void OR_Ar8(u8* r) // 1 1
 {
 	*cpu.reg8_A = *cpu.reg8_A | *r;
-	set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_n, 0);
 	set_flag(flag_h, 0);
 	set_flag(flag_c, 0);
@@ -1153,8 +1213,8 @@ void OR_AHL() // 2 1
 		break;
 
 	case 1:
-		*cpu.reg8_A = *cpu.reg8_A | read8(*((u16*)cpu.reg16_HL));
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		*cpu.reg8_A = *cpu.reg8_A | read8(cpu.reg16_HL);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 0);
 		set_flag(flag_c, 0);
@@ -1176,7 +1236,7 @@ void OR_An8() // 2 2
 
 	case 1:
 		*cpu.reg8_A = *cpu.reg8_A | read8(cpu.reg16_PC++);
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 0);
 		set_flag(flag_c, 0);
@@ -1189,7 +1249,7 @@ void opcodeF6() { OR_An8(); }
 void XOR_Ar8(u8* r) // 1 1
 {
 	*cpu.reg8_A = *cpu.reg8_A ^ *r;
-	set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_n, 0);
 	set_flag(flag_h, 0);
 	set_flag(flag_c, 0);
@@ -1213,8 +1273,8 @@ void XOR_AHL() // 2 1
 		break;
 
 	case 1:
-		*cpu.reg8_A = *cpu.reg8_A ^ read8(*((u16*)cpu.reg16_HL));
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		*cpu.reg8_A = *cpu.reg8_A ^ read8(cpu.reg16_HL);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 0);
 		set_flag(flag_c, 0);
@@ -1236,7 +1296,7 @@ void XOR_An8() // 2 2
 
 	case 1:
 		*cpu.reg8_A = *cpu.reg8_A ^ read8(cpu.reg16_PC++);
-		set_flag(flag_z, *cpu.reg8_A == 0 ? 1 : 0);
+		set_flag(flag_z, *cpu.reg8_A == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, 0);
 		set_flag(flag_c, 0);
@@ -1274,7 +1334,7 @@ void DI() // 1 1
 }
 void opcodeF3() { DI(); }
 
-void POP_r16(u8* r) // 3 2
+void POP_r16(u8* h, u8* l) // 3 2
 {
 	if (!cpu.instruction_cycles_remain)
 		cpu.instruction_cycles_remain = 3;
@@ -1285,21 +1345,21 @@ void POP_r16(u8* r) // 3 2
 		break;
 
 	case 2:
-		r[1] = read8(cpu.reg16_SP++);
+		*l = read8(cpu.reg16_SP++);
 		break;
 
 	case 1:
-		r[0] = read8(cpu.reg16_SP++);
+		*h = read8(cpu.reg16_SP++);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcodeC1() { POP_r16(cpu.reg16_BC); }
-void opcodeD1() { POP_r16(cpu.reg16_DE); }
-void opcodeE1() { POP_r16(cpu.reg16_HL); }
-void opcodeF1() { POP_r16(cpu.reg16_AF); }
+void opcodeC1() { POP_r16(cpu.reg8_B, cpu.reg8_C); }
+void opcodeD1() { POP_r16(cpu.reg8_D, cpu.reg8_E); }
+void opcodeE1() { POP_r16(cpu.reg8_H, cpu.reg8_L); }
+void opcodeF1() { POP_r16(cpu.reg8_A, cpu.reg8_F); }
 
-void PUSH_r16(u8* r) // 4 2
+void PUSH_r16(u8* h, u8* l) // 4 2
 {
 	if (!cpu.instruction_cycles_remain)
 		cpu.instruction_cycles_remain = 4;
@@ -1310,26 +1370,26 @@ void PUSH_r16(u8* r) // 4 2
 		break;
 
 	case 3:
-		write8(--cpu.reg16_SP, r[0]);
+		write8(--cpu.reg16_SP, *h);
 		break;
 
 	case 2:
 		break;
 
 	case 1:
-		write8(--cpu.reg16_SP, r[1]);
+		write8(--cpu.reg16_SP, *l);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
 }
-void opcodeC5() { PUSH_r16(cpu.reg16_BC); }
-void opcodeD5() { PUSH_r16(cpu.reg16_DE); }
-void opcodeE5() { PUSH_r16(cpu.reg16_HL); }
-void opcodeF5() { PUSH_r16(cpu.reg16_AF); }
+void opcodeC5() { PUSH_r16(cpu.reg8_B, cpu.reg8_C); }
+void opcodeD5() { PUSH_r16(cpu.reg8_D, cpu.reg8_E); }
+void opcodeE5() { PUSH_r16(cpu.reg8_H, cpu.reg8_L); }
+void opcodeF5() { PUSH_r16(cpu.reg8_A, cpu.reg8_F); }
 
 void JP_HL() // 1 1
 {
-	cpu.reg16_PC = *((u16*)cpu.reg16_HL);
+	cpu.reg16_PC = cpu.reg16_HL;
 }
 void opcodeE9() { JP_HL(); }
 
@@ -1418,7 +1478,7 @@ void opcode18() { JR_n16(); }
 void JR_cce8(condition cc) // 3 2
 {
 	if (!cpu.instruction_cycles_remain)
-		cpu.instruction_cycles_remain = 4;
+		cpu.instruction_cycles_remain = 3;
 
 	static s8 offset;
 	switch (cpu.instruction_cycles_remain)
@@ -1812,7 +1872,7 @@ void BIT_u3HL(u8 bit) // 3 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 2:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 1:
@@ -1903,7 +1963,7 @@ void RES_u3HL(u8 bit) // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -1912,7 +1972,7 @@ void RES_u3HL(u8 bit) // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -1997,7 +2057,7 @@ void SET_u3HL(u8 bit) // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2006,7 +2066,7 @@ void SET_u3HL(u8 bit) // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2019,24 +2079,6 @@ void opcodeCBE6() { SET_u3HL(4); }
 void opcodeCBEE() { SET_u3HL(5); }
 void opcodeCBF6() { SET_u3HL(6); }
 void opcodeCBFE() { SET_u3HL(7); }
-
-void cpu_tick()
-{
-	static void (*instruction_to_execute)();
-
-	if (cpu.instruction_cycles_remain == 0)
-	{
-		if (!cpu.prefix_instruction)
-			instruction_to_execute = instruction_set[cpu.reg16_PC++];
-		else
-		{
-			instruction_to_execute = CB_set[cpu.reg16_PC++];
-			cpu.prefix_instruction = 0;
-		}
-	}
-
-	instruction_to_execute();
-}
 
 void RL_r8(u8* r) // 2 2
 {
@@ -2064,7 +2106,7 @@ void RL_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2077,7 +2119,7 @@ void RL_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2110,7 +2152,7 @@ void RR_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2123,7 +2165,7 @@ void RR_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2156,7 +2198,7 @@ void RLC_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2169,7 +2211,7 @@ void RLC_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2202,7 +2244,7 @@ void RRC_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2215,7 +2257,7 @@ void RRC_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2248,7 +2290,7 @@ void SLA_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2261,7 +2303,7 @@ void SLA_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2294,7 +2336,7 @@ void SRA_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2307,7 +2349,7 @@ void SRA_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2340,7 +2382,7 @@ void SRL_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(*((u16*)cpu.reg16_HL));
+		val = read8(cpu.reg16_HL);
 		break;
 
 	case 2:
@@ -2353,7 +2395,7 @@ void SRL_HL() // 4 2
 		break;
 
 	case 1:
-		write8(*((u16*)cpu.reg16_HL), val);
+		write8(cpu.reg16_HL, val);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -2381,7 +2423,7 @@ void SWAP_HL()
 	u8 temp = *cpu.reg8_H;
 	*cpu.reg8_H = *cpu.reg8_L;
 	*cpu.reg8_L = temp;
-	set_flag(flag_z, *((u16*)cpu.reg16_HL) == 0);
+	set_flag(flag_z, cpu.reg16_HL == 0);
 	set_flag(flag_n, 0);
 	set_flag(flag_h, 0);
 	set_flag(flag_c, 0);

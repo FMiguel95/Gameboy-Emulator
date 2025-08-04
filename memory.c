@@ -1,4 +1,5 @@
 #include "memory.h"
+memory_t memory;
 
 void write8(u16 address, u8 val)
 {
@@ -34,7 +35,9 @@ void write16(u16 address, u16 val)
 
 u8 read8(u16 address)
 {
-	if (address < 0x4000)
+	if (address < 0x0100)
+		return boot_rom[address];
+	else if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
 		return memory.rom_bank1[address - 0x4000];
@@ -65,3 +68,21 @@ u16 read16(u16 address)
 	return ((u16)high_byte << 8) | low_byte;
 }
 
+int init_memory()
+{
+	if (cartridge.cartridge_type != 0x00)
+	{
+		printf("Unsupported cartridge type: %s\n", cartridge_types[cartridge.cartridge_type]);
+		return 0;
+	}
+	if (cartridge.rom_size != 0x00)
+	{
+		printf("Unsupported ROM size: %s\n", rom_sizes[cartridge.rom_size]);
+		return 0;
+	}
+
+	memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
+	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
+
+	return 1;
+}

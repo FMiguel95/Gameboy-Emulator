@@ -26,7 +26,7 @@ typedef struct {
 	u16 global_checksum;		// 014E-014F
 } cartridge_t;
 
-static cartridge_t cartridge;
+extern cartridge_t cartridge;
 
 static const char* const cartridge_types[0x100] = {
 	[0x00] = "ROM ONLY",
