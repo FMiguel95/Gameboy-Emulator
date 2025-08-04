@@ -25,9 +25,11 @@ typedef struct {
 
 	u16 reg16_PC;
 
-	u8 instruction_cycles_remain;
-
 	u8 IME;
+
+	u8 prefix_instruction;
+
+	u8 instruction_cycles_remain;
 
 } cpu_t;
 
@@ -446,6 +448,12 @@ void opcode17();
 void RRA();
 void opcode1F();
 
+void PREFIX() // 1 1
+{
+	cpu.prefix_instruction = 1;
+}
+void opcodeCB() { PREFIX(); }
+
 static void (*instruction_set[0x100])() = {
 	[0x00] = opcode00,
 	[0x01] = opcode01,
@@ -650,7 +658,7 @@ static void (*instruction_set[0x100])() = {
 	[0xC8] = opcodeC8,
 	[0xC9] = opcodeC9,
 	[0xCA] = opcodeCA,
-	// [0xCB] = opcodeCB, // PREFIX
+	[0xCB] = opcodeCB, // PREFIX
 	[0xCC] = opcodeCC,
 	[0xCD] = opcodeCD,
 	[0xCE] = opcodeCE,
@@ -704,6 +712,210 @@ static void (*instruction_set[0x100])() = {
 	[0xFE] = opcodeFE,
 	[0xFF] = opcodeFF
 };
+
+void BIT_u3r8(u8 bit, u8* r);
+void opcodeCB40();
+void opcodeCB41();
+void opcodeCB42();
+void opcodeCB43();
+void opcodeCB44();
+void opcodeCB45();
+void opcodeCB47();
+void opcodeCB48();
+void opcodeCB49();
+void opcodeCB4A();
+void opcodeCB4B();
+void opcodeCB4C();
+void opcodeCB4D();
+void opcodeCB4F();
+void opcodeCB50();
+void opcodeCB51();
+void opcodeCB52();
+void opcodeCB53();
+void opcodeCB54();
+void opcodeCB55();
+void opcodeCB57();
+void opcodeCB58();
+void opcodeCB59();
+void opcodeCB5A();
+void opcodeCB5B();
+void opcodeCB5C();
+void opcodeCB5D();
+void opcodeCB5F();
+void opcodeCB60();
+void opcodeCB61();
+void opcodeCB62();
+void opcodeCB63();
+void opcodeCB64();
+void opcodeCB65();
+void opcodeCB67();
+void opcodeCB68();
+void opcodeCB69();
+void opcodeCB6A();
+void opcodeCB6B();
+void opcodeCB6C();
+void opcodeCB6D();
+void opcodeCB6F();
+void opcodeCB70();
+void opcodeCB71();
+void opcodeCB72();
+void opcodeCB73();
+void opcodeCB74();
+void opcodeCB75();
+void opcodeCB77();
+void opcodeCB78();
+void opcodeCB79();
+void opcodeCB7A();
+void opcodeCB7B();
+void opcodeCB7C();
+void opcodeCB7D();
+void opcodeCB7F();
+
+void BIT_u3HL(u8 bit);
+void opcodeCB46();
+void opcodeCB4E();
+void opcodeCB56();
+void opcodeCB5E();
+void opcodeCB66();
+void opcodeCB6E();
+void opcodeCB76();
+void opcodeCB7E();
+
+void RES_u3r8(u8 bit, u8* r);
+void opcodeCB80();
+void opcodeCB81();
+void opcodeCB82();
+void opcodeCB83();
+void opcodeCB84();
+void opcodeCB85();
+void opcodeCB87();
+void opcodeCB88();
+void opcodeCB89();
+void opcodeCB8A();
+void opcodeCB8B();
+void opcodeCB8C();
+void opcodeCB8D();
+void opcodeCB8F();
+void opcodeCB90();
+void opcodeCB91();
+void opcodeCB92();
+void opcodeCB93();
+void opcodeCB94();
+void opcodeCB95();
+void opcodeCB97();
+void opcodeCB98();
+void opcodeCB99();
+void opcodeCB9A();
+void opcodeCB9B();
+void opcodeCB9C();
+void opcodeCB9D();
+void opcodeCB9F();
+void opcodeCBA0();
+void opcodeCBA1();
+void opcodeCBA2();
+void opcodeCBA3();
+void opcodeCBA4();
+void opcodeCBA5();
+void opcodeCBA7();
+void opcodeCBA8();
+void opcodeCBA9();
+void opcodeCBAA();
+void opcodeCBAB();
+void opcodeCBAC();
+void opcodeCBAD();
+void opcodeCBAF();
+void opcodeCBB0();
+void opcodeCBB1();
+void opcodeCBB2();
+void opcodeCBB3();
+void opcodeCBB4();
+void opcodeCBB5();
+void opcodeCBB7();
+void opcodeCBB8();
+void opcodeCBB9();
+void opcodeCBBA();
+void opcodeCBBB();
+void opcodeCBBC();
+void opcodeCBBD();
+void opcodeCBBF();
+
+void RES_u3HL(u8 bit);
+void opcodeCB86();
+void opcodeCB8E();
+void opcodeCB96();
+void opcodeCB9E();
+void opcodeCBA6();
+void opcodeCBAE();
+void opcodeCBB6();
+void opcodeCBBE();
+
+void SET_u3r8(u8 bit, u8* r);
+void opcodeCBC0();
+void opcodeCBC1();
+void opcodeCBC2();
+void opcodeCBC3();
+void opcodeCBC4();
+void opcodeCBC5();
+void opcodeCBC7();
+void opcodeCBC8();
+void opcodeCBC9();
+void opcodeCBCA();
+void opcodeCBCB();
+void opcodeCBCC();
+void opcodeCBCD();
+void opcodeCBCF();
+void opcodeCBD0();
+void opcodeCBD1();
+void opcodeCBD2();
+void opcodeCBD3();
+void opcodeCBD4();
+void opcodeCBD5();
+void opcodeCBD7();
+void opcodeCBD8();
+void opcodeCBD9();
+void opcodeCBDA();
+void opcodeCBDB();
+void opcodeCBDC();
+void opcodeCBDD();
+void opcodeCBDF();
+void opcodeCBE0();
+void opcodeCBE1();
+void opcodeCBE2();
+void opcodeCBE3();
+void opcodeCBE4();
+void opcodeCBE5();
+void opcodeCBE7();
+void opcodeCBE8();
+void opcodeCBE9();
+void opcodeCBEA();
+void opcodeCBEB();
+void opcodeCBEC();
+void opcodeCBED();
+void opcodeCBEF();
+void opcodeCBF0();
+void opcodeCBF1();
+void opcodeCBF2();
+void opcodeCBF3();
+void opcodeCBF4();
+void opcodeCBF5();
+void opcodeCBF7();
+void opcodeCBF8();
+void opcodeCBF9();
+void opcodeCBFA();
+void opcodeCBFB();
+void opcodeCBFC();
+void opcodeCBFD();
+void opcodeCBFF();
+
+void SET_u3HL(u8 bit);
+void opcodeCBC6();
+void opcodeCBCE();
+void opcodeCBD6();
+void opcodeCBDE();
+void opcodeCBE6();
+void opcodeCBEE();
+void opcodeCBF6();
+void opcodeCBFE();
 
 static void (*CB_set[0x100])() = {
 	// [0x00] = opcodeCB00,
@@ -770,198 +982,198 @@ static void (*CB_set[0x100])() = {
 	// [0x3D] = opcodeCB3D,
 	// [0x3E] = opcodeCB3E,
 	// [0x3F] = opcodeCB3F,
-	// [0x40] = opcodeCB40,
-	// [0x41] = opcodeCB41,
-	// [0x42] = opcodeCB42,
-	// [0x43] = opcodeCB43,
-	// [0x44] = opcodeCB44,
-	// [0x45] = opcodeCB45,
-	// [0x46] = opcodeCB46,
-	// [0x47] = opcodeCB47,
-	// [0x48] = opcodeCB48,
-	// [0x49] = opcodeCB49,
-	// [0x4A] = opcodeCB4A,
-	// [0x4B] = opcodeCB4B,
-	// [0x4C] = opcodeCB4C,
-	// [0x4D] = opcodeCB4D,
-	// [0x4E] = opcodeCB4E,
-	// [0x4F] = opcodeCB4F,
-	// [0x50] = opcodeCB50,
-	// [0x51] = opcodeCB51,
-	// [0x52] = opcodeCB52,
-	// [0x53] = opcodeCB53,
-	// [0x54] = opcodeCB54,
-	// [0x55] = opcodeCB55,
-	// [0x56] = opcodeCB56,
-	// [0x57] = opcodeCB57,
-	// [0x58] = opcodeCB58,
-	// [0x59] = opcodeCB59,
-	// [0x5A] = opcodeCB5A,
-	// [0x5B] = opcodeCB5B,
-	// [0x5C] = opcodeCB5C,
-	// [0x5D] = opcodeCB5D,
-	// [0x5E] = opcodeCB5E,
-	// [0x5F] = opcodeCB5F,
-	// [0x60] = opcodeCB60,
-	// [0x61] = opcodeCB61,
-	// [0x62] = opcodeCB62,
-	// [0x63] = opcodeCB63,
-	// [0x64] = opcodeCB64,
-	// [0x65] = opcodeCB65,
-	// [0x66] = opcodeCB66,
-	// [0x67] = opcodeCB67,
-	// [0x68] = opcodeCB68,
-	// [0x69] = opcodeCB69,
-	// [0x6A] = opcodeCB6A,
-	// [0x6B] = opcodeCB6B,
-	// [0x6C] = opcodeCB6C,
-	// [0x6D] = opcodeCB6D,
-	// [0x6E] = opcodeCB6E,
-	// [0x6F] = opcodeCB6F,
-	// [0x70] = opcodeCB70,
-	// [0x71] = opcodeCB71,
-	// [0x72] = opcodeCB72,
-	// [0x73] = opcodeCB73,
-	// [0x74] = opcodeCB74,
-	// [0x75] = opcodeCB75,
-	// [0x76] = opcodeCB76,
-	// [0x77] = opcodeCB77,
-	// [0x78] = opcodeCB78,
-	// [0x79] = opcodeCB79,
-	// [0x7A] = opcodeCB7A,
-	// [0x7B] = opcodeCB7B,
-	// [0x7C] = opcodeCB7C,
-	// [0x7D] = opcodeCB7D,
-	// [0x7E] = opcodeCB7E,
-	// [0x7F] = opcodeCB7F,
-	// [0x80] = opcodeCB80,
-	// [0x81] = opcodeCB81,
-	// [0x82] = opcodeCB82,
-	// [0x83] = opcodeCB83,
-	// [0x84] = opcodeCB84,
-	// [0x85] = opcodeCB85,
-	// [0x86] = opcodeCB86,
-	// [0x87] = opcodeCB87,
-	// [0x88] = opcodeCB88,
-	// [0x89] = opcodeCB89,
-	// [0x8A] = opcodeCB8A,
-	// [0x8B] = opcodeCB8B,
-	// [0x8C] = opcodeCB8C,
-	// [0x8D] = opcodeCB8D,
-	// [0x8E] = opcodeCB8E,
-	// [0x8F] = opcodeCB8F,
-	// [0x90] = opcodeCB90,
-	// [0x91] = opcodeCB91,
-	// [0x92] = opcodeCB92,
-	// [0x93] = opcodeCB93,
-	// [0x94] = opcodeCB94,
-	// [0x95] = opcodeCB95,
-	// [0x96] = opcodeCB96,
-	// [0x97] = opcodeCB97,
-	// [0x98] = opcodeCB98,
-	// [0x99] = opcodeCB99,
-	// [0x9A] = opcodeCB9A,
-	// [0x9B] = opcodeCB9B,
-	// [0x9C] = opcodeCB9C,
-	// [0x9D] = opcodeCB9D,
-	// [0x9E] = opcodeCB9E,
-	// [0x9F] = opcodeCB9F,
-	// [0xA0] = opcodeCBA0,
-	// [0xA1] = opcodeCBA1,
-	// [0xA2] = opcodeCBA2,
-	// [0xA3] = opcodeCBA3,
-	// [0xA4] = opcodeCBA4,
-	// [0xA5] = opcodeCBA5,
-	// [0xA6] = opcodeCBA6,
-	// [0xA7] = opcodeCBA7,
-	// [0xA8] = opcodeCBA8,
-	// [0xA9] = opcodeCBA9,
-	// [0xAA] = opcodeCBAA,
-	// [0xAB] = opcodeCBAB,
-	// [0xAC] = opcodeCBAC,
-	// [0xAD] = opcodeCBAD,
-	// [0xAE] = opcodeCBAE,
-	// [0xAF] = opcodeCBAF,
-	// [0xB0] = opcodeCBB0,
-	// [0xB1] = opcodeCBB1,
-	// [0xB2] = opcodeCBB2,
-	// [0xB3] = opcodeCBB3,
-	// [0xB4] = opcodeCBB4,
-	// [0xB5] = opcodeCBB5,
-	// [0xB6] = opcodeCBB6,
-	// [0xB7] = opcodeCBB7,
-	// [0xB8] = opcodeCBB8,
-	// [0xB9] = opcodeCBB9,
-	// [0xBA] = opcodeCBBA,
-	// [0xBB] = opcodeCBBB,
-	// [0xBC] = opcodeCBBC,
-	// [0xBD] = opcodeCBBD,
-	// [0xBE] = opcodeCBBE,
-	// [0xBF] = opcodeCBBF,
-	// [0xC0] = opcodeCBC0,
-	// [0xC1] = opcodeCBC1,
-	// [0xC2] = opcodeCBC2,
-	// [0xC3] = opcodeCBC3,
-	// [0xC4] = opcodeCBC4,
-	// [0xC5] = opcodeCBC5,
-	// [0xC6] = opcodeCBC6,
-	// [0xC7] = opcodeCBC7,
-	// [0xC8] = opcodeCBC8,
-	// [0xC9] = opcodeCBC9,
-	// [0xCA] = opcodeCBCA,
-	// [0xCB] = opcodeCBCB,
-	// [0xCC] = opcodeCBCC,
-	// [0xCD] = opcodeCBCD,
-	// [0xCE] = opcodeCBCE,
-	// [0xCF] = opcodeCBCF,
-	// [0xD0] = opcodeCBD0,
-	// [0xD1] = opcodeCBD1,
-	// [0xD2] = opcodeCBD2,
-	// [0xD3] = opcodeCBD3,
-	// [0xD4] = opcodeCBD4,
-	// [0xD5] = opcodeCBD5,
-	// [0xD6] = opcodeCBD6,
-	// [0xD7] = opcodeCBD7,
-	// [0xD8] = opcodeCBD8,
-	// [0xD9] = opcodeCBD9,
-	// [0xDA] = opcodeCBDA,
-	// [0xDB] = opcodeCBDB,
-	// [0xDC] = opcodeCBDC,
-	// [0xDD] = opcodeCBDE,
-	// [0xDE] = opcodeCBDE,
-	// [0xDF] = opcodeCBDF,
-	// [0xE0] = opcodeCBE0,
-	// [0xE1] = opcodeCBE1,
-	// [0xE2] = opcodeCBE2,
-	// [0xE3] = opcodeCBE3,
-	// [0xE4] = opcodeCBE4,
-	// [0xE5] = opcodeCBE5,
-	// [0xE6] = opcodeCBE6,
-	// [0xE7] = opcodeCBE7,
-	// [0xE8] = opcodeCBE8,
-	// [0xE9] = opcodeCBE9,
-	// [0xEA] = opcodeCBEA,
-	// [0xEB] = opcodeCBEB,
-	// [0xEC] = opcodeCBEC,
-	// [0xED] = opcodeCBED,
-	// [0xEE] = opcodeCBEE,
-	// [0xEF] = opcodeCBEF,
-	// [0xF0] = opcodeCBF0,
-	// [0xF1] = opcodeCBF1,
-	// [0xF2] = opcodeCBF2,
-	// [0xF3] = opcodeCBF3,
-	// [0xF4] = opcodeCBF4,
-	// [0xF5] = opcodeCBF5,
-	// [0xF6] = opcodeCBF6,
-	// [0xF7] = opcodeCBF7,
-	// [0xF8] = opcodeCBF8,
-	// [0xF9] = opcodeCBF9,
-	// [0xFA] = opcodeCBFA,
-	// [0xFB] = opcodeCBFB,
-	// [0xFC] = opcodeCBFC,
-	// [0xFD] = opcodeCBFD,
-	// [0xFE] = opcodeCBFE,
-	// [0xFF] = opcodeCBFF
+	[0x40] = opcodeCB40,
+	[0x41] = opcodeCB41,
+	[0x42] = opcodeCB42,
+	[0x43] = opcodeCB43,
+	[0x44] = opcodeCB44,
+	[0x45] = opcodeCB45,
+	[0x46] = opcodeCB46,
+	[0x47] = opcodeCB47,
+	[0x48] = opcodeCB48,
+	[0x49] = opcodeCB49,
+	[0x4A] = opcodeCB4A,
+	[0x4B] = opcodeCB4B,
+	[0x4C] = opcodeCB4C,
+	[0x4D] = opcodeCB4D,
+	[0x4E] = opcodeCB4E,
+	[0x4F] = opcodeCB4F,
+	[0x50] = opcodeCB50,
+	[0x51] = opcodeCB51,
+	[0x52] = opcodeCB52,
+	[0x53] = opcodeCB53,
+	[0x54] = opcodeCB54,
+	[0x55] = opcodeCB55,
+	[0x56] = opcodeCB56,
+	[0x57] = opcodeCB57,
+	[0x58] = opcodeCB58,
+	[0x59] = opcodeCB59,
+	[0x5A] = opcodeCB5A,
+	[0x5B] = opcodeCB5B,
+	[0x5C] = opcodeCB5C,
+	[0x5D] = opcodeCB5D,
+	[0x5E] = opcodeCB5E,
+	[0x5F] = opcodeCB5F,
+	[0x60] = opcodeCB60,
+	[0x61] = opcodeCB61,
+	[0x62] = opcodeCB62,
+	[0x63] = opcodeCB63,
+	[0x64] = opcodeCB64,
+	[0x65] = opcodeCB65,
+	[0x66] = opcodeCB66,
+	[0x67] = opcodeCB67,
+	[0x68] = opcodeCB68,
+	[0x69] = opcodeCB69,
+	[0x6A] = opcodeCB6A,
+	[0x6B] = opcodeCB6B,
+	[0x6C] = opcodeCB6C,
+	[0x6D] = opcodeCB6D,
+	[0x6E] = opcodeCB6E,
+	[0x6F] = opcodeCB6F,
+	[0x70] = opcodeCB70,
+	[0x71] = opcodeCB71,
+	[0x72] = opcodeCB72,
+	[0x73] = opcodeCB73,
+	[0x74] = opcodeCB74,
+	[0x75] = opcodeCB75,
+	[0x76] = opcodeCB76,
+	[0x77] = opcodeCB77,
+	[0x78] = opcodeCB78,
+	[0x79] = opcodeCB79,
+	[0x7A] = opcodeCB7A,
+	[0x7B] = opcodeCB7B,
+	[0x7C] = opcodeCB7C,
+	[0x7D] = opcodeCB7D,
+	[0x7E] = opcodeCB7E,
+	[0x7F] = opcodeCB7F,
+	[0x80] = opcodeCB80,
+	[0x81] = opcodeCB81,
+	[0x82] = opcodeCB82,
+	[0x83] = opcodeCB83,
+	[0x84] = opcodeCB84,
+	[0x85] = opcodeCB85,
+	[0x86] = opcodeCB86,
+	[0x87] = opcodeCB87,
+	[0x88] = opcodeCB88,
+	[0x89] = opcodeCB89,
+	[0x8A] = opcodeCB8A,
+	[0x8B] = opcodeCB8B,
+	[0x8C] = opcodeCB8C,
+	[0x8D] = opcodeCB8D,
+	[0x8E] = opcodeCB8E,
+	[0x8F] = opcodeCB8F,
+	[0x90] = opcodeCB90,
+	[0x91] = opcodeCB91,
+	[0x92] = opcodeCB92,
+	[0x93] = opcodeCB93,
+	[0x94] = opcodeCB94,
+	[0x95] = opcodeCB95,
+	[0x96] = opcodeCB96,
+	[0x97] = opcodeCB97,
+	[0x98] = opcodeCB98,
+	[0x99] = opcodeCB99,
+	[0x9A] = opcodeCB9A,
+	[0x9B] = opcodeCB9B,
+	[0x9C] = opcodeCB9C,
+	[0x9D] = opcodeCB9D,
+	[0x9E] = opcodeCB9E,
+	[0x9F] = opcodeCB9F,
+	[0xA0] = opcodeCBA0,
+	[0xA1] = opcodeCBA1,
+	[0xA2] = opcodeCBA2,
+	[0xA3] = opcodeCBA3,
+	[0xA4] = opcodeCBA4,
+	[0xA5] = opcodeCBA5,
+	[0xA6] = opcodeCBA6,
+	[0xA7] = opcodeCBA7,
+	[0xA8] = opcodeCBA8,
+	[0xA9] = opcodeCBA9,
+	[0xAA] = opcodeCBAA,
+	[0xAB] = opcodeCBAB,
+	[0xAC] = opcodeCBAC,
+	[0xAD] = opcodeCBAD,
+	[0xAE] = opcodeCBAE,
+	[0xAF] = opcodeCBAF,
+	[0xB0] = opcodeCBB0,
+	[0xB1] = opcodeCBB1,
+	[0xB2] = opcodeCBB2,
+	[0xB3] = opcodeCBB3,
+	[0xB4] = opcodeCBB4,
+	[0xB5] = opcodeCBB5,
+	[0xB6] = opcodeCBB6,
+	[0xB7] = opcodeCBB7,
+	[0xB8] = opcodeCBB8,
+	[0xB9] = opcodeCBB9,
+	[0xBA] = opcodeCBBA,
+	[0xBB] = opcodeCBBB,
+	[0xBC] = opcodeCBBC,
+	[0xBD] = opcodeCBBD,
+	[0xBE] = opcodeCBBE,
+	[0xBF] = opcodeCBBF,
+	[0xC0] = opcodeCBC0,
+	[0xC1] = opcodeCBC1,
+	[0xC2] = opcodeCBC2,
+	[0xC3] = opcodeCBC3,
+	[0xC4] = opcodeCBC4,
+	[0xC5] = opcodeCBC5,
+	[0xC6] = opcodeCBC6,
+	[0xC7] = opcodeCBC7,
+	[0xC8] = opcodeCBC8,
+	[0xC9] = opcodeCBC9,
+	[0xCA] = opcodeCBCA,
+	[0xCB] = opcodeCBCB,
+	[0xCC] = opcodeCBCC,
+	[0xCD] = opcodeCBCD,
+	[0xCE] = opcodeCBCE,
+	[0xCF] = opcodeCBCF,
+	[0xD0] = opcodeCBD0,
+	[0xD1] = opcodeCBD1,
+	[0xD2] = opcodeCBD2,
+	[0xD3] = opcodeCBD3,
+	[0xD4] = opcodeCBD4,
+	[0xD5] = opcodeCBD5,
+	[0xD6] = opcodeCBD6,
+	[0xD7] = opcodeCBD7,
+	[0xD8] = opcodeCBD8,
+	[0xD9] = opcodeCBD9,
+	[0xDA] = opcodeCBDA,
+	[0xDB] = opcodeCBDB,
+	[0xDC] = opcodeCBDC,
+	[0xDD] = opcodeCBDE,
+	[0xDE] = opcodeCBDE,
+	[0xDF] = opcodeCBDF,
+	[0xE0] = opcodeCBE0,
+	[0xE1] = opcodeCBE1,
+	[0xE2] = opcodeCBE2,
+	[0xE3] = opcodeCBE3,
+	[0xE4] = opcodeCBE4,
+	[0xE5] = opcodeCBE5,
+	[0xE6] = opcodeCBE6,
+	[0xE7] = opcodeCBE7,
+	[0xE8] = opcodeCBE8,
+	[0xE9] = opcodeCBE9,
+	[0xEA] = opcodeCBEA,
+	[0xEB] = opcodeCBEB,
+	[0xEC] = opcodeCBEC,
+	[0xED] = opcodeCBED,
+	[0xEE] = opcodeCBEE,
+	[0xEF] = opcodeCBEF,
+	[0xF0] = opcodeCBF0,
+	[0xF1] = opcodeCBF1,
+	[0xF2] = opcodeCBF2,
+	[0xF3] = opcodeCBF3,
+	[0xF4] = opcodeCBF4,
+	[0xF5] = opcodeCBF5,
+	[0xF6] = opcodeCBF6,
+	[0xF7] = opcodeCBF7,
+	[0xF8] = opcodeCBF8,
+	[0xF9] = opcodeCBF9,
+	[0xFA] = opcodeCBFA,
+	[0xFB] = opcodeCBFB,
+	[0xFC] = opcodeCBFC,
+	[0xFD] = opcodeCBFD,
+	[0xFE] = opcodeCBFE,
+	[0xFF] = opcodeCBFF
 };
 
 void cpu_tick();
