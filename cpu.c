@@ -39,6 +39,18 @@ void NOP() // 1 1
 }
 void opcode00() { NOP(); }
 
+void HALT()
+{
+	printf("HALT\n");
+}
+void opcode76() { HALT(); }
+
+void STOP()
+{
+	printf("STOP\n");
+}
+void opcode10() { STOP(); }
+
 void LD_r8r8(u8* r1, u8* r2) // 1 1
 {
 	*r1 = *r2;
@@ -1704,6 +1716,30 @@ void RRA() // 1 1
 }
 void opcode1F() { RRA(); }
 
+void PREFIX() // 1 1
+{
+	cpu.prefix_instruction = 1;
+}
+void opcodeCB() { PREFIX(); }
+
+void hole(char* str)
+{
+	printf("opcode hole %s\n", str);
+	while (1)
+		sleep(1000);
+}
+void opcodeD3() { hole("D3"); }
+void opcodeDB() { hole("DB"); }
+void opcodeDD() { hole("DD"); }
+void opcodeE3() { hole("E3"); }
+void opcodeE4() { hole("E4"); }
+void opcodeEB() { hole("EB"); }
+void opcodeEC() { hole("EC"); }
+void opcodeED() { hole("ED"); }
+void opcodeF4() { hole("F4"); }
+void opcodeFC() { hole("FC"); }
+void opcodeFD() { hole("FD"); }
+
 void BIT_u3r8(u8 bit, u8* r) // 2 2
 {
 	set_flag(flag_z, ((*r >> bit) & 1) == 0);
@@ -2001,3 +2037,353 @@ void cpu_tick()
 
 	instruction_to_execute();
 }
+
+void RL_r8(u8* r) // 2 2
+{
+	u8 bit7 = (*r & 0b10000000) >> 7;
+	*r = (*r << 1) | get_flag(flag_c);
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit7);
+}
+void opcodeCB10() { RL_r8(cpu.reg8_B); }
+void opcodeCB11() { RL_r8(cpu.reg8_C); }
+void opcodeCB12() { RL_r8(cpu.reg8_D); }
+void opcodeCB13() { RL_r8(cpu.reg8_E); }
+void opcodeCB14() { RL_r8(cpu.reg8_H); }
+void opcodeCB15() { RL_r8(cpu.reg8_L); }
+void opcodeCB17() { RL_r8(cpu.reg8_A); }
+
+void RL_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit7 = (val & 0b10000000) >> 7;
+		val = (val << 1) | get_flag(flag_c);
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit7);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB16() { RL_HL(); }
+
+void RR_r8(u8* r) // 2 2
+{
+	u8 bit0 = *r & 0b00000001;
+	*r = (get_flag(flag_c) << 7) | (*r >> 1);
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit0);
+}
+void opcodeCB18() { RR_r8(cpu.reg8_B); }
+void opcodeCB19() { RR_r8(cpu.reg8_C); }
+void opcodeCB1A() { RR_r8(cpu.reg8_D); }
+void opcodeCB1B() { RR_r8(cpu.reg8_E); }
+void opcodeCB1C() { RR_r8(cpu.reg8_H); }
+void opcodeCB1D() { RR_r8(cpu.reg8_L); }
+void opcodeCB1F() { RR_r8(cpu.reg8_A); }
+
+void RR_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit0 = val & 0b00000001;
+		val = (get_flag(flag_c) << 7) | (val >> 1);
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit0);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB1E() { RR_HL(); }
+
+void RLC_r8(u8* r) // 1 1
+{
+	u8 bit7 = (*r & 0b10000000) >> 7;
+	*r = (*r << 1) | bit7;
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit7);
+}
+void opcodeCB00() { RLC_r8(cpu.reg8_B); }
+void opcodeCB01() { RLC_r8(cpu.reg8_C); }
+void opcodeCB02() { RLC_r8(cpu.reg8_D); }
+void opcodeCB03() { RLC_r8(cpu.reg8_E); }
+void opcodeCB04() { RLC_r8(cpu.reg8_H); }
+void opcodeCB05() { RLC_r8(cpu.reg8_L); }
+void opcodeCB07() { RLC_r8(cpu.reg8_A); }
+
+void RLC_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit7 = (val & 0b10000000) >> 7;
+		val = (val << 1) | bit7;
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit7);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB06() { RLC_HL(); }
+
+void RRC_r8(u8* r) // 2 2
+{
+	u8 bit0 = *r & 0b00000001;
+	*r = (bit0 << 7) | (*r >> 1);
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit0);
+}
+void opcodeCB08() { RRC_r8(cpu.reg8_B); }
+void opcodeCB09() { RRC_r8(cpu.reg8_C); }
+void opcodeCB0A() { RRC_r8(cpu.reg8_D); }
+void opcodeCB0B() { RRC_r8(cpu.reg8_E); }
+void opcodeCB0C() { RRC_r8(cpu.reg8_H); }
+void opcodeCB0D() { RRC_r8(cpu.reg8_L); }
+void opcodeCB0F() { RRC_r8(cpu.reg8_A); }
+
+void RRC_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit0 = val & 0b00000001;
+		val = (bit0 << 7) | (val >> 1);
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit0);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB0E() { RRC_HL(); }
+
+void SLA_r8(u8* r) // 2 2
+{
+	u8 bit7 = (*r & 0b10000000) >> 7;
+	*r = *r << 1;
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit7);
+}
+void opcodeCB20() { SLA_r8(cpu.reg8_B); }
+void opcodeCB21() { SLA_r8(cpu.reg8_C); }
+void opcodeCB22() { SLA_r8(cpu.reg8_D); }
+void opcodeCB23() { SLA_r8(cpu.reg8_E); }
+void opcodeCB24() { SLA_r8(cpu.reg8_H); }
+void opcodeCB25() { SLA_r8(cpu.reg8_L); }
+void opcodeCB27() { SLA_r8(cpu.reg8_A); }
+
+void SLA_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit7 = (val & 0b10000000) >> 7;
+		val = val << 1;
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit7);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB26() { SLA_HL(); }
+
+void SRA_r8(u8* r) // 2 2
+{
+	u8 bit0 = *r & 0b00000001;
+	*r = (*r & 0b10000000) | *r >> 1;
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit0);
+}
+void opcodeCB28() { SRA_r8(cpu.reg8_B); }
+void opcodeCB29() { SRA_r8(cpu.reg8_C); }
+void opcodeCB2A() { SRA_r8(cpu.reg8_D); }
+void opcodeCB2B() { SRA_r8(cpu.reg8_E); }
+void opcodeCB2C() { SRA_r8(cpu.reg8_H); }
+void opcodeCB2D() { SRA_r8(cpu.reg8_L); }
+void opcodeCB2F() { SRA_r8(cpu.reg8_A); }
+
+void SRA_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit0 = val & 0b00000001;
+		val = (val & 0b10000000) | val >> 1;
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit0);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB2E() { SRA_HL(); }
+
+void SRL_r8(u8* r) // 2 2
+{
+	u8 bit0 = *r & 0b00000001;
+	*r = *r >> 1;
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, bit0);
+}
+void opcodeCB38() { SRL_r8(cpu.reg8_B); }
+void opcodeCB39() { SRL_r8(cpu.reg8_C); }
+void opcodeCB3A() { SRL_r8(cpu.reg8_D); }
+void opcodeCB3B() { SRL_r8(cpu.reg8_E); }
+void opcodeCB3C() { SRL_r8(cpu.reg8_H); }
+void opcodeCB3D() { SRL_r8(cpu.reg8_L); }
+void opcodeCB3F() { SRL_r8(cpu.reg8_A); }
+
+void SRL_HL() // 4 2
+{
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		val = read8(*((u16*)cpu.reg16_HL));
+		break;
+
+	case 2:
+		u8 bit0 = val & 0b00000001;
+		val = val >> 1;
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, bit0);
+		break;
+
+	case 1:
+		write8(*((u16*)cpu.reg16_HL), val);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
+}
+void opcodeCB3E() { SRL_HL(); }
+
+void SWAP_r8(u8* r)
+{
+	*r = (*r << 4) | (*r >> 4);
+	set_flag(flag_z, *r == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, 0);
+}
+void opcodeCB30() { SWAP_r8(cpu.reg8_B); }
+void opcodeCB31() { SWAP_r8(cpu.reg8_C); }
+void opcodeCB32() { SWAP_r8(cpu.reg8_D); }
+void opcodeCB33() { SWAP_r8(cpu.reg8_E); }
+void opcodeCB34() { SWAP_r8(cpu.reg8_H); }
+void opcodeCB35() { SWAP_r8(cpu.reg8_L); }
+void opcodeCB37() { SWAP_r8(cpu.reg8_A); }
+
+void SWAP_HL()
+{
+	u8 temp = *cpu.reg8_H;
+	*cpu.reg8_H = *cpu.reg8_L;
+	*cpu.reg8_L = temp;
+	set_flag(flag_z, *((u16*)cpu.reg16_HL) == 0);
+	set_flag(flag_n, 0);
+	set_flag(flag_h, 0);
+	set_flag(flag_c, 0);
+}
+void opcodeCB36() { SWAP_HL(); }
