@@ -1,3 +1,14 @@
+// 01 OK
+// 02
+// 03
+// 04 OK
+// 05 OK
+// 06 OK
+// 07 gets stuck?
+// 08 OK
+// 09 OK
+// 10
+// 11
 #ifndef CPU_H
 # define CPU_H
 

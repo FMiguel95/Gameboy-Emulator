@@ -25,6 +25,9 @@ void write8(u16 address, u8 val)
 		memory.high_ram[address - 0xFF80] = val;
 	else
 		memory.ie_register[address - 0xFFFF] = val;
+
+	if (address == 0xFF02)
+		putchar(read8(0xFF01));
 }
 
 void write16(u16 address, u16 val)
@@ -70,19 +73,21 @@ u16 read16(u16 address)
 
 int init_memory()
 {
-	if (cartridge.cartridge_type != 0x00)
-	{
-		printf("Unsupported cartridge type: %s\n", cartridge_types[cartridge.cartridge_type]);
-		return 0;
-	}
-	if (cartridge.rom_size != 0x00)
-	{
-		printf("Unsupported ROM size: %s\n", rom_sizes[cartridge.rom_size]);
-		return 0;
-	}
+	// if (cartridge.cartridge_type != 0x00)
+	// {
+	// 	printf("Unsupported cartridge type: %s\n", cartridge_types[cartridge.cartridge_type]);
+	// 	return 0;
+	// }
+	// if (cartridge.rom_size != 0x00)
+	// {
+	// 	printf("Unsupported ROM size: %s\n", rom_sizes[cartridge.rom_size]);
+	// 	return 0;
+	// }
 
 	memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
 	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
+
+	write8(0xFF44, 0x90);
 
 	return 1;
 }

@@ -24,7 +24,7 @@ void cpu_tick()
 
 	if (cpu.instruction_cycles_remain == 0)
 	{
-		cpu_print_status();
+		// cpu_print_status();
 		if (!cpu.prefix_instruction)
 		{
 			instruction_to_execute = instruction_set[read8(cpu.reg16_PC++)];
@@ -40,10 +40,8 @@ void cpu_tick()
 
 void cpu_print_status()
 {
-	printf("B: 0x%.2X\n", *cpu.reg8_B);
-	printf("C: 0x%.2X\n", *cpu.reg8_C);
-	printf("D: 0x%.2X\n", *cpu.reg8_D);
-	printf("E: 0x%.2X\n", *cpu.reg8_E);
+	printf("BC: 0x%.4X\n", cpu.reg16_BC);
+	printf("DE: 0x%.4X\n", cpu.reg16_DE);
 	printf("HL: 0x%.4X\n", cpu.reg16_HL);
 	printf("A: 0x%.2X\n", *cpu.reg8_A);
 	printf("flag z: %u\n", get_flag(flag_z));
@@ -52,7 +50,10 @@ void cpu_print_status()
 	printf("flag c: %u\n", get_flag(flag_c));
 	printf("PC: 0x%.4X\n", cpu.reg16_PC);
 	printf("SP: 0x%.4X\n", cpu.reg16_SP);
-	printf(">> %s\n", opcode_decode[read8(cpu.reg16_PC)]);
+	if (cpu.prefix_instruction)
+		printf(">> CB %.2X\n", read8(cpu.reg16_PC));
+	else
+		printf(">> %s\n", opcode_decode[read8(cpu.reg16_PC)]);
 	getchar();
 }
 
@@ -1346,6 +1347,8 @@ void POP_r16(u8* h, u8* l) // 3 2
 
 	case 2:
 		*l = read8(cpu.reg16_SP++);
+		if (l == cpu.reg8_F)
+			*cpu.reg8_F = (*cpu.reg8_F & 0b11110000);
 		break;
 
 	case 1:
@@ -1524,11 +1527,11 @@ void CALL_n16() // 6 3
 		break;
 
 	case 3:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
 		break;
 
 	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
 		break;
 
 	case 1:
@@ -1561,11 +1564,11 @@ void CALL_ccn16(condition cc) // 6 3
 		break;
 
 	case 3:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
 		break;
 
 	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
 		break;
 
 	case 1:
@@ -1702,33 +1705,27 @@ void opcodeEF() { RST(0x28); }
 void opcodeF7() { RST(0x30); }
 void opcodeFF() { RST(0x38); }
 
-void DDA()
+void DDA() // 1 1
 {
-	u8 adjustment = 0;
-	int set_c = 0;
-
-	if (get_flag(flag_n))
+	if (!get_flag(flag_n))
 	{
-		if (get_flag(flag_h))
-			adjustment += 0x6;
-		if (get_flag(flag_c))
-			adjustment += 0x60;
-		(*cpu.reg8_A) -= adjustment;
+		if (get_flag(flag_c) || *cpu.reg8_A > 0x99)
+		{
+			(*cpu.reg8_A) += 0x60;
+			set_flag(flag_c, 1);
+		}
+		if (get_flag(flag_h) || (*cpu.reg8_A & 0x0f) > 0x09)
+			(*cpu.reg8_A) += 0x6;
 	}
 	else
 	{
-		if (get_flag(flag_h) || (*cpu.reg8_A & 0xF) > 0x9)
-			adjustment += 0x6;
-		if (get_flag(flag_c) || *cpu.reg8_A > 0x99)
-		{
-			adjustment += 0x60;
-			set_c = 1;
-		}
-		(*cpu.reg8_A) += adjustment;
+		if (get_flag(flag_c))
+			(*cpu.reg8_A) -= 0x60;
+		if (get_flag(flag_h))
+			(*cpu.reg8_A) -= 0x6;
 	}
 	set_flag(flag_z, *cpu.reg8_A == 0);
 	set_flag(flag_h, 0);
-	set_flag(flag_c, set_c);
 }
 void opcode27() { DDA(); }
 
