@@ -2,8 +2,9 @@
 # define EMULATOR_H
 
 # include "cartridge.h"
-# include "cpu.h"
 # include "memory.h"
+# include "cpu.h"
+# include "ppu.h"
 
 typedef struct
 {

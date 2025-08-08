@@ -15,7 +15,9 @@ int init_cpu()
 	cpu.reg8_S = ((u8*)(&cpu.reg16_SP)) + 1;
 	cpu.reg8_P = (u8*)(&cpu.reg16_SP);
 
-	return 0;
+	cpu.reg16_PC = 0xFF; // skip boot rom
+
+	return 1;
 }
 
 void cpu_tick()
@@ -580,10 +582,12 @@ void LD_SPHL() // 2 1
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 2:
+		*cpu.reg8_P = *cpu.reg8_L;
 		break;
 
 	case 1:
-		cpu.reg16_SP = cpu.reg16_HL;
+		// cpu.reg16_SP = cpu.reg16_HL;
+		*cpu.reg8_S = *cpu.reg8_H;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -604,7 +608,7 @@ void LD_SPHLe8() // 3 2
 	case 2:
 		s8 n = read8(cpu.reg16_PC++);
 		set_flag(flag_h, ((cpu.reg16_SP & 0xF) + (n & 0xF)) > 0xF);
-		set_flag(flag_c, ((cpu.reg16_SP & 0xFF) + n) > 0xF);
+		set_flag(flag_c, ((cpu.reg16_SP & 0xFF) + (n & 0xFF)) > 0xFF);
 		res = cpu.reg16_SP + n;
 		set_flag(flag_z, 0);
 		set_flag(flag_n, 0);
@@ -793,7 +797,7 @@ void ADD_SPe8() // 4 2
 
 	case 2:
 		set_flag(flag_h, ((cpu.reg16_SP & 0xF) + (val & 0xF)) > 0xF);
-		u16 res = (cpu.reg16_SP & 0xFF) + val;
+		u16 res = (cpu.reg16_SP & 0xFF) + (val & 0xFF);
 		set_flag(flag_c, res > 0xFF);
 		set_flag(flag_z, 0);
 		set_flag(flag_n, 0);

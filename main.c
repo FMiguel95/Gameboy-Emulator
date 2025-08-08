@@ -10,8 +10,11 @@ int main(int ac, char** av)
 
 	if (!read_rom(av[1]))
 		return 1;
-
 	if (!init_memory())
+		return 1;
+	if (!init_cpu())
+		return 1;
+	if (!init_ppu())
 		return 1;
 
 	run_emulator();

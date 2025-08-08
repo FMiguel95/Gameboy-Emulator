@@ -4,6 +4,51 @@
 # include "types.h"
 # include "cartridge.h"
 
+# define JOYP	0xFF00 // Joypad	Mixed
+# define SB		0xFF01 // Serial transfer data	R/W
+# define SC		0xFF02 // Serial transfer control	R/W
+# define DIV	0xFF04 // Divider register	R/W
+# define TIMA	0xFF05 // Timer counter	R/W
+# define TMA	0xFF06 // Timer modulo	R/W
+# define TAC	0xFF07 // Timer control	R/W
+# define IF		0xFF0F // Interrupt flag	R/W
+# define NR10	0xFF10 // Sound channel 1 sweep	R/W
+# define NR11	0xFF11 // Sound channel 1 length timer & duty cycle	Mixed
+# define NR12	0xFF12 // Sound channel 1 volume & envelope	R/W
+# define NR13	0xFF13 // Sound channel 1 period low	W
+# define NR14	0xFF14 // Sound channel 1 period high & control	Mixed
+# define NR21	0xFF16 // Sound channel 2 length timer & duty cycle	Mixed
+# define NR22	0xFF17 // Sound channel 2 volume & envelope	R/W
+# define NR23	0xFF18 // Sound channel 2 period low	W
+# define NR24	0xFF19 // Sound channel 2 period high & control	Mixed
+# define NR30	0xFF1A // Sound channel 3 DAC enable	R/W
+# define NR31	0xFF1B // Sound channel 3 length timer	W
+# define NR32	0xFF1C // Sound channel 3 output level	R/W
+# define NR33	0xFF1D // Sound channel 3 period low	W
+# define NR34	0xFF1E // Sound channel 3 period high & control	Mixed
+# define NR41	0xFF20 // Sound channel 4 length timer	W
+# define NR42	0xFF21 // Sound channel 4 volume & envelope	R/W
+# define NR43	0xFF22 // Sound channel 4 frequency & randomness	R/W
+# define NR44	0xFF23 // Sound channel 4 control	Mixed
+# define NR50	0xFF24 // Master volume & VIN panning	R/W
+# define NR51	0xFF25 // Sound panning	R/W
+# define NR52	0xFF26 // Sound on/off	Mixed
+# define FF3F	0xFF30 // Wave RAM	Storage for one of the sound channels’ waveform	R/W
+# define LCDC	0xFF40 // LCD control	R/W
+# define STAT	0xFF41 // LCD status	Mixed
+# define SCY	0xFF42 // Viewport Y position	R/W
+# define SCX	0xFF43 // Viewport X position	R/W
+# define LY		0xFF44 // LCD Y coordinate	R
+# define LYC	0xFF45 // LY compare	R/W
+# define DMA	0xFF46 // OAM DMA source address & start	R/W
+# define BGP	0xFF47 // BG palette data	R/W
+# define OBP0	0xFF48 // OBJ palette 0 data	R/W
+# define OBP1	0xFF49 // OBJ palette 1 data	R/W
+# define WY		0xFF4A // Window Y position	R/W
+# define WX		0xFF4B // Window X position plus 7	R/W
+# define BANK	0xFF50 // Boot ROM mapping control	W
+# define IE		0xFFFF // Interrupt enable	R/W
+
 typedef struct {
 	u8 rom_bank0[0x4000];		// 0000 - 3FFF
 	u8 rom_bank1[0x4000];		// 4000 - 7FFF
