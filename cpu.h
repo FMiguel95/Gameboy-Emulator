@@ -4,7 +4,7 @@
 // 04 OK
 // 05 OK
 // 06 OK
-// 07 gets stuck?
+// 07 OK
 // 08 OK
 // 09 OK
 // 10 OK
@@ -51,6 +51,8 @@ typedef struct {
 extern cpu_t cpu;
 
 int init_cpu();
+
+void skip_boot_rom();
 
 void cpu_tick();
 

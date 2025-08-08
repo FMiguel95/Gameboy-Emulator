@@ -15,9 +15,30 @@ int init_cpu()
 	cpu.reg8_S = ((u8*)(&cpu.reg16_SP)) + 1;
 	cpu.reg8_P = (u8*)(&cpu.reg16_SP);
 
-	cpu.reg16_PC = 0xFF; // skip boot rom
+	// skip_boot_rom();
 
 	return 1;
+}
+
+void skip_boot_rom()
+{
+	*cpu.reg8_A = 0x01;
+	*cpu.reg8_F = 0xB0;
+	*cpu.reg8_B = 0x00;
+	*cpu.reg8_C = 0x13;
+	*cpu.reg8_D = 0x00;
+	*cpu.reg8_E = 0xD8;
+	*cpu.reg8_H = 0x01;
+	*cpu.reg8_L = 0x4D;
+	cpu.reg16_SP = 0xFFFE;
+	cpu.reg16_PC = 0x0100;
+}
+
+void cpu_log()
+{
+	printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
+		*cpu.reg8_A, *cpu.reg8_F, *cpu.reg8_B, *cpu.reg8_C, *cpu.reg8_D, *cpu.reg8_E, *cpu.reg8_H, *cpu.reg8_L, cpu.reg16_SP, cpu.reg16_PC,
+		read8(cpu.reg16_PC), read8(cpu.reg16_PC+1), read8(cpu.reg16_PC+2), read8(cpu.reg16_PC+3));
 }
 
 void cpu_tick()
@@ -29,6 +50,7 @@ void cpu_tick()
 		// cpu_print_status();
 		if (!cpu.prefix_instruction)
 		{
+			// cpu_log();
 			instruction_to_execute = instruction_set[read8(cpu.reg16_PC++)];
 		}
 		else

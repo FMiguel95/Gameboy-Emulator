@@ -26,8 +26,8 @@ void write8(u16 address, u8 val)
 	else
 		memory.ie_register[address - 0xFFFF] = val;
 
-	if (address == SC)
-		putchar(read8(SB));
+	// if (address == SC)
+	// 	putchar(read8(SB));
 }
 
 void write16(u16 address, u16 val)
@@ -88,7 +88,7 @@ int init_memory()
 	memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
 	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
 
-	write8(0xFF44, 0x90);
+	write8(LY, 0x90);
 
 	return 1;
 }

@@ -12,7 +12,6 @@ int read_rom(const char* path)
 
 	fseek(file, 0l, SEEK_END);
 	long rom_length = ftell(file);
-	printf("rom size: %ld\n", rom_length);
 	rewind(file);
 
 	u8* rom = malloc(rom_length);
