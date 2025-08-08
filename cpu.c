@@ -1029,7 +1029,7 @@ void INC_HL() // 3 1
 		break;
 
 	case 1:
-		u8 val = read8(cpu.reg16_PC++);
+		write8(cpu.reg16_HL, val);
 		set_flag(flag_z, val == 0);
 		set_flag(flag_n, 0);
 		set_flag(flag_h, (val & 0xF) == 0);
@@ -1092,7 +1092,7 @@ void DEC_HL() // 3 1
 		break;
 
 	case 1:
-		u8 val = read8(cpu.reg16_PC++);
+		write8(cpu.reg16_HL, val);
 		set_flag(flag_z, val == 0);
 		set_flag(flag_n, 1);
 		set_flag(flag_h, (val & 0xF) == 0xF);
@@ -2419,14 +2419,30 @@ void opcodeCB34() { SWAP_r8(cpu.reg8_H); }
 void opcodeCB35() { SWAP_r8(cpu.reg8_L); }
 void opcodeCB37() { SWAP_r8(cpu.reg8_A); }
 
-void SWAP_HL()
+void SWAP_HL() // 4 2
 {
-	u8 temp = *cpu.reg8_H;
-	*cpu.reg8_H = *cpu.reg8_L;
-	*cpu.reg8_L = temp;
-	set_flag(flag_z, cpu.reg16_HL == 0);
-	set_flag(flag_n, 0);
-	set_flag(flag_h, 0);
-	set_flag(flag_c, 0);
+	if (!cpu.instruction_cycles_remain)
+		cpu.instruction_cycles_remain = 3;
+
+	static u8 val;
+	switch (cpu.instruction_cycles_remain)
+	{
+	case 3:
+		break;
+
+	case 2:
+		val = read8(cpu.reg16_HL);
+		val = (val << 4) | (val >> 4);
+		break;
+
+	case 1:
+		write8(cpu.reg16_HL, val);
+		set_flag(flag_z, val == 0);
+		set_flag(flag_n, 0);
+		set_flag(flag_h, 0);
+		set_flag(flag_c, 0);
+		break;
+	}
+	cpu.instruction_cycles_remain--;
 }
 void opcodeCB36() { SWAP_HL(); }

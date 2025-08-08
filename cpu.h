@@ -7,8 +7,8 @@
 // 07 gets stuck?
 // 08 OK
 // 09 OK
-// 10
-// 11
+// 10 OK
+// 11 OK
 #ifndef CPU_H
 # define CPU_H
 
