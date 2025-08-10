@@ -42,8 +42,8 @@ typedef struct {
 
 	u8 IME;
 
+	void (*instruction_to_execute)();
 	u8 prefix_instruction;
-
 	u8 instruction_cycles_remain;
 
 } cpu_t;
@@ -58,14 +58,15 @@ void cpu_tick();
 
 void cpu_print_status();
 
+u8 get_flag(u8 byte, u8 bit);
+void set_flag(u8* byte, u8 bit, u8 val);
+
 typedef enum {
 	flag_c = 4,
 	flag_h = 5,
 	flag_n = 6,
 	flag_z = 7
 } f_flag;
-u8 get_flag(f_flag bit);
-void set_flag(f_flag bit, u8 val);
 
 typedef enum {
 	Z,
@@ -74,6 +75,25 @@ typedef enum {
 	NC
 } condition;
 int check_condition(condition cc);
+
+typedef enum {
+	VBlank = 0,
+	LCD = 1,
+	Timer = 2,
+	Serial = 3,
+	Joypad = 4,
+	NoInterrupt = 0xFF
+} interrupt_flag;
+
+
+interrupt_flag interrupt_pending();
+void interrupt_handler();
+void call_interrupt(interrupt_flag flag);
+void call_interrupt_VBlank();
+void call_interrupt_LCD();
+void call_interrupt_Timer();
+void call_interrupt_Serial();
+void call_interrupt_Joypad();
 
 void NOP();
 void opcode00();
@@ -1311,7 +1331,7 @@ static void (*CB_set[0x100])() = {
 	[0xFF] = opcodeCBFF
 };
 
-static const char* const opcode_decode[0x100] = {
+static const char* opcode_decode[0x100] = {
 	[0x00] = "NOP",
 	[0x01] = "LD BC, n16",
 	[0x02] = "LD [BC], A",

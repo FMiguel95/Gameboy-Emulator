@@ -3,6 +3,11 @@ memory_t memory;
 
 void write8(u16 address, u8 val)
 {
+	if (address == DIV)
+	{
+		
+	}
+
 	if (address < 0x4000)
 		memory.rom_bank0[address] = val;
 	else if (address < 0x8000)
@@ -26,8 +31,8 @@ void write8(u16 address, u8 val)
 	else
 		memory.ie_register[address - 0xFFFF] = val;
 
-	// if (address == SC)
-	// 	putchar(read8(SB));
+	if (address == SC)
+		putchar(read8(SB));
 }
 
 void write16(u16 address, u16 val)
@@ -38,9 +43,10 @@ void write16(u16 address, u16 val)
 
 u8 read8(u16 address)
 {
-	if (address < 0x0100)
-		return boot_rom[address];
-	else if (address < 0x4000)
+	// if (address < 0x0100)
+	// 	return boot_rom[address];
+	// else
+	if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
 		return memory.rom_bank1[address - 0x4000];

@@ -28,7 +28,7 @@ typedef struct {
 
 extern cartridge_t cartridge;
 
-static const char* const cartridge_types[0x100] = {
+static const char* cartridge_types[0x100] = {
 	[0x00] = "ROM ONLY",
 	[0x01] = "MBC1",
 	[0x02] = "MBC1+RAM",
@@ -59,7 +59,7 @@ static const char* const cartridge_types[0x100] = {
 	[0xFF] = "HuC1+RAM+BATTERY"
 };
 
-static const char* const rom_sizes[0x100] = {
+static const char* rom_sizes[0x100] = {
 	[0x00] = "32 KiB",
 	[0x01] = "64 KiB",
 	[0x02] = "128 KiB",
@@ -71,7 +71,7 @@ static const char* const rom_sizes[0x100] = {
 	[0x08] = "8 MiB"
 };
 
-static const char* const ram_sizes[0x100] = {
+static const char* ram_sizes[0x100] = {
 	[0x00] = "0",
 	[0x02] = "8 KiB",
 	[0x03] = "32 KiB",
@@ -79,12 +79,12 @@ static const char* const ram_sizes[0x100] = {
 	[0x05] = "64 KiB"
 };
 
-static const char* const destination_codes[0x100] = {
+static const char* destination_codes[0x100] = {
 	[0x00] = "Japan",
 	[0x01] = "Overseas"
 };
 
-static const char* const old_licensee_codes[0x100] = {
+static const char* old_licensee_codes[0x100] = {
 	[0x00] = "None",
 	[0x01] = "Nintendo",
 	[0x08] = "Capcom",

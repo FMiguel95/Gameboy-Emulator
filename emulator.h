@@ -3,6 +3,7 @@
 
 # include "cartridge.h"
 # include "memory.h"
+# include "timers.h"
 # include "cpu.h"
 # include "ppu.h"
 
