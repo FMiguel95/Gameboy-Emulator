@@ -64,35 +64,35 @@ void cpu_tick()
 void interrupt_handler()
 {
 	interrupt_flag f = interrupt_pending();	// interrupt servicing happens after fetching the next opcode
-	if (f != NoInterrupt)
+	if (f == NoInterrupt)
+		return;
+	
+	cpu.IME = 0;
+	u8 IF_val = read8(IF);
+	set_flag(&IF_val, f, 0);
+	write8(IF, IF_val);
+	
+	switch (f)
 	{
-		cpu.IME = 0;
-		u8 IF_val = read8(IF);
-		set_flag(&IF_val, f, 0);
-		write8(IF, IF_val);
+	case VBlank:
+		cpu.instruction_to_execute = call_interrupt_VBlank;
+		break;
 		
-		switch (f)
-		{
-		case VBlank:
-			cpu.instruction_to_execute = call_interrupt_VBlank;
-			break;
-			
-		case LCD:
-			cpu.instruction_to_execute = call_interrupt_LCD;
-			break;
-			
-		case Timer:
-			cpu.instruction_to_execute = call_interrupt_Timer;
-			break;
-			
-		case Serial:
-			cpu.instruction_to_execute = call_interrupt_Serial;
-			break;
-			
-		case Joypad:
-			cpu.instruction_to_execute = call_interrupt_Joypad;
-			break;
-		}
+	case LCD:
+		cpu.instruction_to_execute = call_interrupt_LCD;
+		break;
+		
+	case Timer:
+		cpu.instruction_to_execute = call_interrupt_Timer;
+		break;
+		
+	case Serial:
+		cpu.instruction_to_execute = call_interrupt_Serial;
+		break;
+		
+	case Joypad:
+		cpu.instruction_to_execute = call_interrupt_Joypad;
+		break;
 	}
 }
 
@@ -184,20 +184,6 @@ void cpu_print_status()
 	getchar();
 }
 
-u8 get_flag(u8 byte, u8 bit)
-{
-	return ((byte >> bit) & 1);
-}
-
-void set_flag(u8* byte, u8 bit, u8 val)
-{
-	if (val)
-		*byte |= (1 << bit);
-	else
-		*byte &= ~(1 << bit);
-
-}
-
 int check_condition(condition cc)
 {
 	switch (cc)
@@ -246,7 +232,7 @@ void STOP() // 2 2
 
 	case 1:
 		write8(DIV, 0); // reset DIV
-		u8 n = read8(cpu.reg16_PC++);
+		u8 _ = read8(cpu.reg16_PC++);
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -412,7 +398,6 @@ void LD_r8HL(u8* r) // 2 1
 	if (!cpu.instruction_cycles_remain)
 		cpu.instruction_cycles_remain = 2;
 
-	static u8 address;
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 2:

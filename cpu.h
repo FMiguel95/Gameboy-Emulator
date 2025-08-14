@@ -58,9 +58,6 @@ void cpu_tick();
 
 void cpu_print_status();
 
-u8 get_flag(u8 byte, u8 bit);
-void set_flag(u8* byte, u8 bit, u8 val);
-
 typedef enum {
 	flag_c = 4,
 	flag_h = 5,

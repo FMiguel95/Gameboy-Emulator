@@ -77,6 +77,19 @@ u16 read16(u16 address)
 	return ((u16)high_byte << 8) | low_byte;
 }
 
+u8 get_flag(u8 byte, u8 bit)
+{
+	return ((byte >> bit) & 1);
+}
+
+void set_flag(u8* byte, u8 bit, u8 val)
+{
+	if (val)
+		*byte |= (1 << bit);
+	else
+		*byte &= ~(1 << bit);
+}
+
 int init_memory()
 {
 	// if (cartridge.cartridge_type != 0x00)
