@@ -15,7 +15,7 @@ int init_cpu()
 	cpu.reg8_S = ((u8*)(&cpu.reg16_SP)) + 1;
 	cpu.reg8_P = (u8*)(&cpu.reg16_SP);
 
-	skip_boot_rom();
+	// skip_boot_rom();
 
 	return 1;
 }

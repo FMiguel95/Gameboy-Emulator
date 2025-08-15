@@ -18,6 +18,11 @@ int main(int ac, char** av)
 		return 1;
 	if (!init_ppu())
 		return 1;
+	if (!init_app())
+	{
+		close_app();
+		return 1;
+	}
 
 	run_emulator();
 

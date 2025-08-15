@@ -43,9 +43,9 @@ void write16(u16 address, u16 val)
 
 u8 read8(u16 address)
 {
-	// if (address < 0x0100)
-	// 	return boot_rom[address];
-	// else
+	if (address < 0x0100)
+		return boot_rom[address];
+	else
 	if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
