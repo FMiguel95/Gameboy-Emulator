@@ -117,6 +117,26 @@ int get_pixel_code(int tile_id, int x, int y)
 	return (val2 << 1) | val1;
 }
 
+int get_color(int color_code)
+{
+	int color;
+	switch (color_code) {
+		case 0b00:
+			color = COLOR_LIGHTER;
+			break;
+		case 0b01:
+			color = COLOR_LIGHT;
+			break;
+		case 0b10:
+			color = COLOR_DARK;
+			break;
+		case 0b11:
+			color = COLOR_DARKER;
+			break;
+	}
+	return color;
+}
+
 void display_vram()
 {
 	size_t tiles_per_row = 16;
@@ -127,24 +147,8 @@ void display_vram()
 			size_t tile_x = x / 8;
 			size_t tile_y = y / 8;
 			size_t tile_id = tile_y * tiles_per_row + tile_x;
-
 			u8 color_code = get_pixel_code(tile_id, x % 8, y % 8);
-
-			int color;
-			switch (color_code) {
-				case 0b00:
-					color = COLOR_DARKER;
-					break;
-				case 0b01:
-					color = COLOR_DARK;
-					break;
-				case 0b10:
-					color = COLOR_LIGHT;
-					break;
-				case 0b11:
-					color = COLOR_LIGHTER;
-					break;
-			}
+			int color = get_color(color_code);
 
 			((int*)emulator.window_vram.screen_surface->pixels)[y * WIN_VRAM_SIZE_X + x] = color;
 		}
@@ -163,22 +167,7 @@ void display_background()
 		{
 			u8 tile_id = memory.video_ram[start_address + (y / 8) * tiles_per_row + (x / 8)];
 			u8 color_code = get_pixel_code(tile_id, x % 8, y % 8);
-
-			int color;
-			switch (color_code) {
-				case 0b00:
-					color = COLOR_DARKER;
-					break;
-				case 0b01:
-					color = COLOR_DARK;
-					break;
-				case 0b10:
-					color = COLOR_LIGHT;
-					break;
-				case 0b11:
-					color = COLOR_LIGHTER;
-					break;
-			}
+			int color = get_color(color_code);
 
 			((int*)emulator.window_background.screen_surface->pixels)[y * WIN_BACKGROUND_SIZE_X + x] = color;
 		}

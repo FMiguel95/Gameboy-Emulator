@@ -70,6 +70,8 @@ long get_current_time();
 
 int get_pixel_code(int tile_id, int x, int y);
 
+int get_color(int color_code);
+
 void display_vram();
 
 void display_background();
