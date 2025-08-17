@@ -61,6 +61,8 @@ typedef struct {
 	u8 io_registers[0x7F];		// FF00 - FF7F
 	u8 high_ram[0x7F];			// FF80 - FFFE
 	u8 ie_register[0x1];		// FFFF
+
+	int passed_boot;
 } memory_t;
 
 extern memory_t memory;

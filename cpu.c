@@ -43,6 +43,8 @@ void cpu_log()
 
 void cpu_tick()
 {
+	if (cpu.reg16_PC == 0x0100)
+		memory.passed_boot = 1;
 	if (cpu.instruction_cycles_remain == 0)
 	{
 		// cpu_print_status();
@@ -111,6 +113,7 @@ interrupt_flag interrupt_pending()
 
 void call_interrupt(interrupt_flag flag)
 {
+	printf("interrupt:%d\n", flag);
 	if (!cpu.instruction_cycles_remain)
 		cpu.instruction_cycles_remain = 5;
 	
