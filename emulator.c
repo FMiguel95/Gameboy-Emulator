@@ -11,8 +11,8 @@ int init_app()
 		return 0;
 	}
 
-	init_window(&emulator.window_vram, "VRAM", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	init_window(&emulator.window_background, "Background", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 
 	emulator.paused = 0;
 	emulator.quit = 0;
@@ -63,8 +63,8 @@ void render_window(window_t* window)
 
 void close_app()
 {
-	SDL_DestroyRenderer(emulator.window_vram.renderer);
-	SDL_DestroyWindow(emulator.window_vram.window);
+	SDL_DestroyRenderer(emulator.window_tiles.renderer);
+	SDL_DestroyWindow(emulator.window_tiles.window);
 
 	SDL_DestroyRenderer(emulator.window_background.renderer);
 	SDL_DestroyWindow(emulator.window_background.window);
@@ -150,11 +150,11 @@ void display_vram()
 			u8 color_code = get_pixel_code(tile_id, x % 8, y % 8);
 			int color = get_color(color_code);
 
-			((int*)emulator.window_vram.screen_surface->pixels)[y * WIN_VRAM_SIZE_X + x] = color;
+			((int*)emulator.window_tiles.screen_surface->pixels)[y * WIN_VRAM_SIZE_X + x] = color;
 		}
 	}
 
-	render_window(&emulator.window_vram);
+	render_window(&emulator.window_tiles);
 }
 
 void display_background()

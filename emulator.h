@@ -37,7 +37,8 @@ typedef struct
 
 	int current_presses[8];
 
-	window_t window_vram;
+	window_t window_game;
+	window_t window_tiles;
 	window_t window_background;
 } emulator_t;
 extern emulator_t emulator;

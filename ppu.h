@@ -3,6 +3,7 @@
 
 # include "types.h"
 # include "memory.h"
+# include "cpu.h"
 
 typedef struct {
 	u8* lcdc;	// LCD Control
@@ -18,9 +19,7 @@ typedef struct {
 	u8* wy;		// Window Y position
 	u8* wx;		// Window X position
 
-
-
-	int buffer[23040];	// 160x144 screen
+	int scanline_cycle;
 } ppu_t;
 
 extern ppu_t ppu;
@@ -32,6 +31,7 @@ int init_ppu();
 // mode 0 -> h blank		21.75-51 cycles			VRAM, OAM
 // ...
 // mode 1 -> v blank		114 * 10 = 1140 cycles	VRAM, OAM
+//							114 * 154 = 17556 cycles per frame
 void ppu_tick();
 
 #endif

@@ -106,7 +106,7 @@ int init_memory()
 	memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
 	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
 
-	write8(LY, 0x90);
+	// write8(LY, 0x90);
 	write8(JOYP, 0xFF);
 
 	return 1;
