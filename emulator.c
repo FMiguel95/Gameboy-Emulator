@@ -137,6 +137,16 @@ int get_color(int color_code)
 	return color;
 }
 
+void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels)
+{
+	for (size_t i = 0; i < length; i++)
+	{
+		pixels[(u8)pos_y * 256 + (u8)pos_x] = color;
+		pos_x += dir_x;
+		pos_y += dir_y;
+	}
+}
+
 void display_vram()
 {
 	size_t tiles_per_row = 16;
@@ -172,6 +182,12 @@ void display_background()
 			((int*)emulator.window_background.screen_surface->pixels)[y * WIN_BACKGROUND_SIZE_X + x] = color;
 		}
 	}
+	// draw viewport
+	draw_line(read8(SCX), read8(SCY), 1, 0, 160, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY), 0, 1, 144, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY) + 144, 1, 0, 160, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX) + 160, read8(SCY), 0, 1, 144, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	
 	
 	render_window(&emulator.window_background);
 }

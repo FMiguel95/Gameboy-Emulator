@@ -73,6 +73,8 @@ int get_pixel_code(int tile_id, int x, int y);
 
 int get_color(int color_code);
 
+void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels);
+
 void display_vram();
 
 void display_background();

@@ -47,8 +47,8 @@ void cpu_log()
 
 void cpu_tick()
 {
-	memory_t* mem = &memory;
-	cpu_t* ccpu = &cpu;
+	// memory_t* mem = &memory;
+	// cpu_t* ccpu = &cpu;
 	if (cpu.reg16_PC == 0x0100)
 		memory.passed_boot = 1;
 	if (cpu.instruction_cycles_remain == 0)
