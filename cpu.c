@@ -36,13 +36,19 @@ void skip_boot_rom()
 
 void cpu_log()
 {
-	printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
+	// printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
+	// 	*cpu.reg8_A, *cpu.reg8_F, *cpu.reg8_B, *cpu.reg8_C, *cpu.reg8_D, *cpu.reg8_E, *cpu.reg8_H, *cpu.reg8_L, cpu.reg16_SP, cpu.reg16_PC,
+	// 	read8(cpu.reg16_PC), read8(cpu.reg16_PC+1), read8(cpu.reg16_PC+2), read8(cpu.reg16_PC+3));
+
+	printf("A:%3d F:%3d B:%3d C:%3d D:%3d E:%3d H:%3d L:%3d SP:%5d PC:%5d PCMEM:%5d,%5d,%5d,%5d, IE:%3d\n",
 		*cpu.reg8_A, *cpu.reg8_F, *cpu.reg8_B, *cpu.reg8_C, *cpu.reg8_D, *cpu.reg8_E, *cpu.reg8_H, *cpu.reg8_L, cpu.reg16_SP, cpu.reg16_PC,
-		read8(cpu.reg16_PC), read8(cpu.reg16_PC+1), read8(cpu.reg16_PC+2), read8(cpu.reg16_PC+3));
+		read8(cpu.reg16_PC), read8(cpu.reg16_PC+1), read8(cpu.reg16_PC+2), read8(cpu.reg16_PC+3), *memory.ie_register);
 }
 
 void cpu_tick()
 {
+	memory_t* mem = &memory;
+	cpu_t* ccpu = &cpu;
 	if (cpu.reg16_PC == 0x0100)
 		memory.passed_boot = 1;
 	if (cpu.instruction_cycles_remain == 0)
@@ -51,7 +57,8 @@ void cpu_tick()
 		if (!cpu.prefix_instruction)
 		{
 			// cpu_log();
-			cpu.instruction_to_execute = instruction_set[read8(cpu.reg16_PC++)];
+			u8 opcode = read8(cpu.reg16_PC++);
+			cpu.instruction_to_execute = instruction_set[opcode];
 			interrupt_handler();	// interrupt servicing happens after fetching the next opcode
 		}
 		else
@@ -59,6 +66,10 @@ void cpu_tick()
 			cpu.instruction_to_execute = CB_set[read8(cpu.reg16_PC++)];
 			cpu.prefix_instruction = 0;
 		}
+		if (cpu.IME_set_request == 1)
+			cpu.IME = 1;
+		if (cpu.IME_set_request)
+			cpu.IME_set_request--;
 	}
 	cpu.instruction_to_execute();
 }
@@ -1456,13 +1467,14 @@ void opcode37() { SCF(); }
 
 void EI() // 1 1
 {
-	cpu.IME = 1;
+	cpu.IME_set_request = 2;
 }
 void opcodeFB() { EI(); }
 
 void DI() // 1 1
 {
 	cpu.IME = 0;
+	cpu.IME_set_request = 0;
 }
 void opcodeF3() { DI(); }
 
@@ -2443,7 +2455,7 @@ void opcodeCB26() { SLA_HL(); }
 void SRA_r8(u8* r) // 2 2
 {
 	u8 bit0 = *r & 0b00000001;
-	*r = (*r & 0b10000000) | *r >> 1;
+	*r = (*r & 0b10000000) | (*r >> 1);
 	set_flag(cpu.reg8_F, flag_z, *r == 0);
 	set_flag(cpu.reg8_F, flag_n, 0);
 	set_flag(cpu.reg8_F, flag_h, 0);

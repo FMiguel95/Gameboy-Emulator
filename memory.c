@@ -45,7 +45,8 @@ u8 read8(u16 address)
 {
 	if (!memory.passed_boot && address < 0x0100)
 		return boot_rom[address];
-	else if (address < 0x4000)
+	else
+	if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
 		return memory.rom_bank1[address - 0x4000];

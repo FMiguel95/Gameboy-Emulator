@@ -41,6 +41,7 @@ typedef struct {
 	u16 reg16_PC;
 
 	u8 IME;
+	u8 IME_set_request;
 
 	void (*instruction_to_execute)();
 	u8 prefix_instruction;
@@ -56,6 +57,7 @@ void skip_boot_rom();
 
 void cpu_tick();
 
+void cpu_log();
 void cpu_print_status();
 
 typedef enum {
