@@ -44,4 +44,3 @@ void ppu_tick()
 			*ppu.ly = 0;
 	}
 }
-

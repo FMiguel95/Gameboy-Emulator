@@ -3,10 +3,8 @@ memory_t memory;
 
 void write8(u16 address, u8 val)
 {
-	if (address == DIV)
-	{
-		
-	}
+	if (address == DIV)	// writing any value to DIV resets it to $00
+		val = 0;
 
 	if (address < 0x4000)
 		memory.rom_bank0[address] = val;

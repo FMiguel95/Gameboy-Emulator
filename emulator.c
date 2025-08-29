@@ -188,7 +188,6 @@ void display_background()
 	draw_line(read8(SCX), read8(SCY) + 144, 1, 0, 160, 0xFF0000, emulator.window_background.screen_surface->pixels);
 	draw_line(read8(SCX) + 160, read8(SCY), 0, 1, 144, 0xFF0000, emulator.window_background.screen_surface->pixels);
 	
-	
 	render_window(&emulator.window_background);
 }
 

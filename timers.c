@@ -16,24 +16,33 @@ int init_timers()
 
 void timers_tick()
 {
-	if (++timers.div_counter == 0)
+	timers.div_counter += 4;
+	if ((timers.div_counter & 0xFF) == 0)
 		(*timers.div)++;
 	
-	if ((*timers.tac & 0b00000100) != 0)	// if tac bit 2, tima is incremented
+	if (get_flag(*timers.tac, 2))	// if tac bit 2, tima is incremented
 	{
-		timers.tima_counter++;
 		u8 clock_speed_code = *timers.tac & 0b00000011;
-		if ((clock_speed_code == 0b00 && timers.tima_counter >= 256)
-			|| (clock_speed_code == 0b01 && timers.tima_counter >= 4)
-			|| (clock_speed_code == 0b10 && timers.tima_counter >= 16)
-			|| (clock_speed_code == 0b11 && timers.tima_counter >= 64))
+		u8 target_bit;
+		switch (clock_speed_code)
+		{
+		case 0b00: target_bit = 9; break;
+		case 0b01: target_bit = 3; break;
+		case 0b10: target_bit = 5; break;
+		case 0b11: target_bit = 7; break;
+		}
+
+		u8 prev = ((timers.div_counter - 1) >> target_bit) & 1;
+		u8 curr = (timers.div_counter >> target_bit) & 1;
+		if (prev == 1 && curr == 0)
 		{
 			(*timers.tima)++;
 			if (*timers.tima == 0)
 			{
-				timers.tima_counter = 0;
 				*timers.tima = *timers.tma;
-				*memory.ie_register |= 0b00000100;
+				u8 val = read8(IF);
+				set_flag(&val, 2, 1);	// request timer interrupt
+				write8(IF, val);
 			}
 		}
 	}

@@ -51,6 +51,15 @@ void cpu_tick()
 	// cpu_t* ccpu = &cpu;
 	if (cpu.reg16_PC == 0x0100)
 		memory.passed_boot = 1;
+
+	if (cpu.halt_mode)
+	{
+		if (read8(IE) & read8(IF))
+			cpu.halt_mode = 0;
+		else
+			return;
+	}
+
 	if (cpu.instruction_cycles_remain == 0)
 	{
 		// cpu_print_status();
@@ -66,7 +75,8 @@ void cpu_tick()
 			cpu.instruction_to_execute = CB_set[read8(cpu.reg16_PC++)];
 			cpu.prefix_instruction = 0;
 		}
-		if (cpu.IME_set_request == 1)
+
+		if (cpu.IME_set_request == 1)	// EI instruction delay
 			cpu.IME = 1;
 		if (cpu.IME_set_request)
 			cpu.IME_set_request--;
@@ -229,7 +239,8 @@ void opcode00() { NOP(); }
 
 void HALT()
 {
-	printf("HALT\n");
+	cpu.halt_mode = 1;
+	// printf("HALT\n");
 }
 void opcode76() { HALT(); }
 

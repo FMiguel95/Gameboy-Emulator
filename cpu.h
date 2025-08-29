@@ -1,14 +1,3 @@
-// 01 OK
-// 02
-// 03 OK
-// 04 OK
-// 05 OK
-// 06 OK
-// 07 OK
-// 08 OK
-// 09 OK
-// 10 OK
-// 11 OK
 #ifndef CPU_H
 # define CPU_H
 
@@ -42,6 +31,8 @@ typedef struct {
 
 	u8 IME;
 	u8 IME_set_request;
+
+	u8 halt_mode;
 
 	void (*instruction_to_execute)();
 	u8 prefix_instruction;

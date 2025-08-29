@@ -6,10 +6,9 @@
 
 typedef struct {
 	u8* div;	// Divider register
-	u8 div_counter;
+	u16 div_counter;
 
 	u8* tima;	// Timer counter
-	u16 tima_counter;
 
 	u8* tma;	// Timer modulo
 	
