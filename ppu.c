@@ -30,6 +30,13 @@ void ppu_tick()
 	}
 
 	ppu.scanline_cycle++;
+	if (ppu.scanline_cycle == 70) // made up h-blank
+	{
+		u8 IF_val = read8(IF);
+		set_flag(&IF_val, Serial, 1);
+		write8(IF, IF_val);
+	}
+
 	if (ppu.scanline_cycle == 114) // end of scanline
 	{
 		ppu.scanline_cycle = 0;

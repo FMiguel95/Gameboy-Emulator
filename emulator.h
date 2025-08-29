@@ -9,19 +9,7 @@
 # include "timers.h"
 # include "cpu.h"
 # include "ppu.h"
-
-typedef enum e_Key
-{
-	KEY_UP,
-	KEY_DOWN,
-	KEY_LEFT,
-	KEY_RIGHT,
-	KEY_A,
-	KEY_B,
-	KEY_START,
-	KEY_SELECT,
-	KEY_COUNT
-} keys_e;
+# include "joypad.h"
 
 typedef struct
 {
@@ -35,8 +23,6 @@ typedef struct
 	int paused;
 	int quit;
 	int fforward;
-
-	int current_presses[8];
 
 	window_t window_game;
 	window_t window_tiles;

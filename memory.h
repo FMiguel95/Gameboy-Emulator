@@ -3,6 +3,7 @@
 
 # include "types.h"
 # include "cartridge.h"
+# include "joypad.h"
 
 # define JOYP	0xFF00 // Joypad	Mixed
 # define SB		0xFF01 // Serial transfer data	R/W

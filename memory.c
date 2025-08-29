@@ -7,9 +7,11 @@ void write8(u16 address, u8 val)
 		val = 0;
 
 	if (address < 0x4000)
-		memory.rom_bank0[address] = val;
+		// memory.rom_bank0[address] = val;
+		return;
 	else if (address < 0x8000)
-		memory.rom_bank1[address - 0x4000] = val;
+		// memory.rom_bank1[address - 0x4000] = val;
+		return;
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
 	else if (address < 0xC000)
@@ -41,10 +43,12 @@ void write16(u16 address, u16 val)
 
 u8 read8(u16 address)
 {
-	if (!memory.passed_boot && address < 0x0100)
+	if (address == JOYP)
+		return read_joypad();
+
+	if (!memory.io_registers[0x50] && address < 0x0100)
 		return boot_rom[address];
-	else
-	if (address < 0x4000)
+	else if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
 		return memory.rom_bank1[address - 0x4000];
@@ -106,7 +110,6 @@ int init_memory()
 	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
 
 	// write8(LY, 0x90);
-	write8(JOYP, 0xFF);
 
 	return 1;
 }

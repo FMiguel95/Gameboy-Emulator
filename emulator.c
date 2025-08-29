@@ -16,7 +16,6 @@ int init_app()
 
 	emulator.paused = 0;
 	emulator.quit = 0;
-	bzero(emulator.current_presses, sizeof(emulator.current_presses));
 
 	return 1;
 }
@@ -206,21 +205,21 @@ void handle_events()
 		if (event.type == SDL_KEYDOWN)
 		{
 			if (event.key.keysym.sym == SDLK_UP)
-				emulator.current_presses[KEY_UP] = 1;
+				press_key(KEY_UP);
 			if (event.key.keysym.sym == SDLK_DOWN)
-				emulator.current_presses[KEY_DOWN] = 1;
+				press_key(KEY_DOWN);
 			if (event.key.keysym.sym == SDLK_LEFT)
-				emulator.current_presses[KEY_LEFT] = 1;
+				press_key(KEY_LEFT);
 			if (event.key.keysym.sym == SDLK_RIGHT)
-				emulator.current_presses[KEY_RIGHT] = 1;
+				press_key(KEY_RIGHT);
 			if (event.key.keysym.sym == SDLK_z)
-				emulator.current_presses[KEY_A] = 1;
+				press_key(KEY_A);
 			if (event.key.keysym.sym == SDLK_x)
-				emulator.current_presses[KEY_B] = 1;
+				press_key(KEY_B);
 			if (event.key.keysym.sym == SDLK_RETURN)
-				emulator.current_presses[KEY_START] = 1;
+				press_key(KEY_START);
 			if (event.key.keysym.sym == SDLK_BACKSPACE)
-				emulator.current_presses[KEY_SELECT] = 1;
+				press_key(KEY_SELECT);
 
 			if (event.key.keysym.sym == SDLK_SPACE)
 				emulator.fforward = 1;
@@ -229,21 +228,21 @@ void handle_events()
 		if (event.type == SDL_KEYUP)
 		{
 			if (event.key.keysym.sym == SDLK_UP)
-				emulator.current_presses[KEY_UP] = 0;
+				release_key(KEY_UP);
 			if (event.key.keysym.sym == SDLK_DOWN)
-				emulator.current_presses[KEY_DOWN] = 0;
+				release_key(KEY_DOWN);
 			if (event.key.keysym.sym == SDLK_LEFT)
-				emulator.current_presses[KEY_LEFT] = 0;
+				release_key(KEY_LEFT);
 			if (event.key.keysym.sym == SDLK_RIGHT)
-				emulator.current_presses[KEY_RIGHT] = 0;
+				release_key(KEY_RIGHT);
 			if (event.key.keysym.sym == SDLK_z)
-				emulator.current_presses[KEY_A] = 0;
+				release_key(KEY_A);
 			if (event.key.keysym.sym == SDLK_x)
-				emulator.current_presses[KEY_B] = 0;
+				release_key(KEY_B);
 			if (event.key.keysym.sym == SDLK_RETURN)
-				emulator.current_presses[KEY_START] = 0;
+				release_key(KEY_START);
 			if (event.key.keysym.sym == SDLK_BACKSPACE)
-				emulator.current_presses[KEY_SELECT] = 0;
+				release_key(KEY_SELECT);
 
 			if (event.key.keysym.sym == SDLK_SPACE)
 				emulator.fforward = 0;
