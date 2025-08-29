@@ -34,6 +34,7 @@ typedef struct
 {
 	int paused;
 	int quit;
+	int fforward;
 
 	int current_presses[8];
 

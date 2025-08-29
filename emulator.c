@@ -93,11 +93,14 @@ int run_emulator()
 		display_vram();
 		display_background();
 
-		long end_time = get_current_time();
-		long sleep_time = start_time + FRAME_TIME - end_time;
-		if (sleep_time > 0)
-			usleep(sleep_time);
-		// printf("%ld\n", end_time - start_time);
+		if (!emulator.fforward)
+		{
+			long end_time = get_current_time();
+			long sleep_time = start_time + FRAME_TIME - end_time;
+			if (sleep_time > 0)
+				usleep(sleep_time);
+			// printf("%ld\n", end_time - start_time);
+		}
 	}
 	return 0;
 }
@@ -218,6 +221,9 @@ void handle_events()
 				emulator.current_presses[KEY_START] = 1;
 			if (event.key.keysym.sym == SDLK_BACKSPACE)
 				emulator.current_presses[KEY_SELECT] = 1;
+
+			if (event.key.keysym.sym == SDLK_SPACE)
+				emulator.fforward = 1;
 		}
 		// on key up
 		if (event.type == SDL_KEYUP)
@@ -238,6 +244,9 @@ void handle_events()
 				emulator.current_presses[KEY_START] = 0;
 			if (event.key.keysym.sym == SDLK_BACKSPACE)
 				emulator.current_presses[KEY_SELECT] = 0;
+
+			if (event.key.keysym.sym == SDLK_SPACE)
+				emulator.fforward = 0;
 		}
 	}
 }
