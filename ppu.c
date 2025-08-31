@@ -24,30 +24,76 @@ int init_ppu()
 
 void ppu_tick()
 {
+	u8 prev_stat = *ppu.stat;
+
 	for (size_t i = 0; i < 4; i++)
 	{
 		
 	}
 
 	ppu.scanline_cycle++;
-	if (ppu.scanline_cycle == 70) // made up h-blank
+
+	if (*ppu.ly < 144)
 	{
-		u8 IF_val = read8(IF);
-		set_flag(&IF_val, Serial, 1);
-		write8(IF, IF_val);
+		if (ppu.scanline_cycle == 0)
+			ppu_set_mode(OAM_scan);
+		else if (ppu.scanline_cycle == 20)
+			ppu_set_mode(draw);
+		else if (ppu.scanline_cycle == 63)
+			ppu_set_mode(h_blank);
 	}
 
 	if (ppu.scanline_cycle == 114) // end of scanline
 	{
 		ppu.scanline_cycle = 0;
 		(*ppu.ly)++;
-		if (*ppu.ly == 144) // trigger v-blank
+		set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
+		if (*ppu.ly == 144)
 		{
+			ppu_set_mode(v_blank);
+			// request v-blank interrupt
 			u8 IF_val = read8(IF);
 			set_flag(&IF_val, VBlank, 1);
 			write8(IF, IF_val);
 		}
 		else if (*ppu.ly == 154) // end of frame
+		{
 			*ppu.ly = 0;
+			ppu_set_mode(OAM_scan);
+		}
 	}
+
+	if (!is_stat(prev_stat) && is_stat(*ppu.stat))
+	{
+		u8 IF_val = read8(IF);
+		set_flag(&IF_val, LCD, 1);
+		write8(IF, IF_val);
+	}
+}
+
+void ppu_set_mode(ppu_mode mode)
+{
+	*ppu.stat = (*ppu.stat & 0b11111100) | (mode & 0b00000011);
+}
+
+ppu_mode ppu_get_mode()
+{
+	return *ppu.stat & 0b00000011;
+}
+
+int is_stat(u8 stat)
+{
+	if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
+		return 1;
+	
+	if (get_flag(stat, STAT_3) && (stat & 0b11) == h_blank)
+		return 1;
+
+	if (get_flag(stat, STAT_4) && (stat & 0b11) == v_blank)
+		return 1;
+
+	if (get_flag(stat, STAT_5) && (stat & 0b11) == OAM_scan)
+		return 1;
+	
+	return 0;
 }

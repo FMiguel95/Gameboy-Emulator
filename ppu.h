@@ -24,6 +24,34 @@ typedef struct {
 
 extern ppu_t ppu;
 
+typedef enum {
+	LCDC_0,	// BG and Window enable/priority
+	LCDC_1,	// OBJ enable
+	LCDC_2,	// OBJ size
+	LCDC_3,	// BG tile map area
+	LCDC_4,	// BG and Window tile data area
+	LCDC_5,	// Window enable
+	LCDC_6,	// Window tile map area
+	LCDC_7	// LCD enable
+} LCDC_bit;
+
+typedef enum {
+	STAT_0,	// PPU mode R
+	STAT_1,	// PPU mode R
+	STAT_2,	// LYC == LY R
+	STAT_3,	// Mode 0 int select R/W
+	STAT_4,	// Mode 1 int select R/W
+	STAT_5,	// Mode 2 int select R/W
+	STAT_6,	// LYC int select R/W
+} STAT_bit;
+
+typedef enum {
+	h_blank	 = 0b00,
+	v_blank	 = 0b01,
+	OAM_scan = 0b10,
+	draw	 = 0b11
+} ppu_mode;
+
 int init_ppu();
 
 // mode 2 -> OAM scan		20 cycles				VRAM
@@ -33,5 +61,11 @@ int init_ppu();
 // mode 1 -> v blank		114 * 10 = 1140 cycles	VRAM, OAM
 //							114 * 154 = 17556 cycles per frame
 void ppu_tick();
+
+void ppu_set_mode(ppu_mode mode);
+
+ppu_mode ppu_get_mode();
+
+int is_stat(u8 stat);
 
 #endif

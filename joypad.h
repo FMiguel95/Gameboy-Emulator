@@ -19,7 +19,7 @@ typedef enum e_Key
 } keys_e;
 
 typedef struct {
-	u8 p1;
+	u8* joyp;
 	int keys_pressed[KEY_COUNT];
 } joypad_t;
 
@@ -28,6 +28,8 @@ extern joypad_t joypad;
 int init_joypad();
 
 u8 read_joypad();
+
+void write_joypad(u8 val);
 
 void press_key(keys_e key);
 
