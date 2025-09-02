@@ -12,6 +12,8 @@ int main(int ac, char** av)
 		return 1;
 	if (!init_memory())
 		return 1;
+	if (!init_tiles())
+		return 1;
 	if (!init_joypad())
 		return 1;
 	if (!init_timers())

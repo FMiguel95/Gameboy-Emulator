@@ -6,6 +6,7 @@
 # include <SDL2/SDL.h>
 # include "cartridge.h"
 # include "memory.h"
+# include "tile.h"
 # include "timers.h"
 # include "cpu.h"
 # include "ppu.h"
@@ -38,11 +39,8 @@ extern emulator_t emulator;
 # define WIN_VRAM_SIZE_Y 192
 # define WIN_BACKGROUND_SIZE_X 256
 # define WIN_BACKGROUND_SIZE_Y 256
-
-# define COLOR_DARKER	0x081820
-# define COLOR_DARK		0x346856
-# define COLOR_LIGHT	0x88C070
-# define COLOR_LIGHTER	0xE0F8D0
+# define WIN_SCREEN_SIZE_X 160
+# define WIN_SCREEN_SIZE_Y 144
 
 int init_app();
 
@@ -55,10 +53,6 @@ void close_app();
 int run_emulator();
 
 long get_current_time();
-
-int get_pixel_code(int tile_id, int x, int y);
-
-int get_color(int color_code);
 
 void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels);
 

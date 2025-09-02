@@ -100,6 +100,7 @@ int run_emulator()
 				usleep(sleep_time);
 			// printf("%ld\n", end_time - start_time);
 		}
+		//printf("%d %d %d %d %d %d %d %d\n", joypad.keys_pressed[0], joypad.keys_pressed[1], joypad.keys_pressed[2], joypad.keys_pressed[3], joypad.keys_pressed[4], joypad.keys_pressed[5], joypad.keys_pressed[6], joypad.keys_pressed[7]);
 	}
 	return 0;
 }
@@ -109,34 +110,6 @@ long get_current_time()
 	struct timespec ts;
 	clock_gettime(1, &ts);
 	return ts.tv_sec * 1000000l + ts.tv_nsec / 1000l;
-}
-
-int get_pixel_code(int tile_id, int x, int y)
-{
-	u8 bit_index = 7 - x;
-	u8 val1 = (memory.video_ram[tile_id * 16 + y * 2] >> bit_index) & 1;
-	u8 val2 = (memory.video_ram[tile_id * 16 + y * 2 + 1] >> bit_index) & 1;
-	return (val2 << 1) | val1;
-}
-
-int get_color(int color_code)
-{
-	int color;
-	switch (color_code) {
-		case 0b00:
-			color = COLOR_LIGHTER;
-			break;
-		case 0b01:
-			color = COLOR_LIGHT;
-			break;
-		case 0b10:
-			color = COLOR_DARK;
-			break;
-		case 0b11:
-			color = COLOR_DARKER;
-			break;
-	}
-	return color;
 }
 
 void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels)
@@ -158,9 +131,9 @@ void display_vram()
 		{
 			size_t tile_x = x / 8;
 			size_t tile_y = y / 8;
-			size_t tile_id = tile_y * tiles_per_row + tile_x;
-			u8 color_code = get_pixel_code(tile_id, x % 8, y % 8);
-			int color = get_color(color_code);
+			size_t tile_index = tile_y * tiles_per_row + tile_x;
+			pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
+			pixel_color color = get_color(color_code);
 
 			((int*)emulator.window_tiles.screen_surface->pixels)[y * WIN_VRAM_SIZE_X + x] = color;
 		}
@@ -178,17 +151,18 @@ void display_background()
 		for (size_t x = 0; x < WIN_BACKGROUND_SIZE_X; x++)
 		{
 			u8 tile_id = memory.video_ram[start_address + (y / 8) * tiles_per_row + (x / 8)];
-			u8 color_code = get_pixel_code(tile_id, x % 8, y % 8);
-			int color = get_color(color_code);
+			tile t = tiles[convert_tile_index(tile_id)];
+			pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
+			pixel_color color = get_color(color_code);
 
 			((int*)emulator.window_background.screen_surface->pixels)[y * WIN_BACKGROUND_SIZE_X + x] = color;
 		}
 	}
-	// draw viewport
-	draw_line(read8(SCX), read8(SCY), 1, 0, 160, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX), read8(SCY), 0, 1, 144, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX), read8(SCY) + 144, 1, 0, 160, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX) + 160, read8(SCY), 0, 1, 144, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	// draw viewport lines
+	draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, emulator.window_background.screen_surface->pixels);
 	
 	render_window(&emulator.window_background);
 }
