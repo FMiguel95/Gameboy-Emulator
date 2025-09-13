@@ -11,7 +11,8 @@ int init_app()
 		return 0;
 	}
 
-	init_window(&emulator.window_background, "Background", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	init_window(&emulator.window_background9800, "Background $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	init_window(&emulator.window_background9C00, "Background $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 
 	emulator.paused = 0;
@@ -65,8 +66,8 @@ void close_app()
 	SDL_DestroyRenderer(emulator.window_tiles.renderer);
 	SDL_DestroyWindow(emulator.window_tiles.window);
 
-	SDL_DestroyRenderer(emulator.window_background.renderer);
-	SDL_DestroyWindow(emulator.window_background.window);
+	SDL_DestroyRenderer(emulator.window_background9800.renderer);
+	SDL_DestroyWindow(emulator.window_background9800.window);
 
 	SDL_Quit();
 }
@@ -90,7 +91,8 @@ int run_emulator()
 		}
 
 		display_vram();
-		display_background();
+		display_background(&emulator.window_background9800, 0x1800);
+		display_background(&emulator.window_background9C00, 0x1C00);
 
 		if (!emulator.fforward)
 		{
@@ -142,9 +144,8 @@ void display_vram()
 	render_window(&emulator.window_tiles);
 }
 
-void display_background()
+void display_background(window_t* window, u16 start_address)
 {
-	u16 start_address = 0x1800;
 	size_t tiles_per_row = 32;
 	for (size_t y = 0; y < WIN_BACKGROUND_SIZE_Y; y++)
 	{
@@ -155,16 +156,16 @@ void display_background()
 			pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
 			pixel_color color = get_color(color_code);
 
-			((int*)emulator.window_background.screen_surface->pixels)[y * WIN_BACKGROUND_SIZE_X + x] = color;
+			((int*)(window->screen_surface->pixels))[y * WIN_BACKGROUND_SIZE_X + x] = color;
 		}
 	}
 	// draw viewport lines
-	draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, emulator.window_background.screen_surface->pixels);
-	draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, emulator.window_background.screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, window->screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, window->screen_surface->pixels);
+	draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, 0xFF0000, window->screen_surface->pixels);
+	draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, window->screen_surface->pixels);
 	
-	render_window(&emulator.window_background);
+	render_window(window);
 }
 
 void handle_events()

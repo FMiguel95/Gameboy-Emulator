@@ -27,7 +27,8 @@ typedef struct
 
 	window_t window_game;
 	window_t window_tiles;
-	window_t window_background;
+	window_t window_background9800;
+	window_t window_background9C00;
 } emulator_t;
 extern emulator_t emulator;
 
@@ -58,7 +59,7 @@ void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color
 
 void display_vram();
 
-void display_background();
+void display_background(window_t* window, u16 start_address);
 
 void handle_events();
 
