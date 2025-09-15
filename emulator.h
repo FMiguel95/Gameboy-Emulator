@@ -10,6 +10,7 @@
 # include "timers.h"
 # include "cpu.h"
 # include "ppu.h"
+# include "object.h"
 # include "joypad.h"
 
 typedef struct
@@ -25,7 +26,7 @@ typedef struct
 	int quit;
 	int fforward;
 
-	window_t window_game;
+	window_t window_screen;
 	window_t window_tiles;
 	window_t window_background9800;
 	window_t window_background9C00;
@@ -56,6 +57,8 @@ int run_emulator();
 long get_current_time();
 
 void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels);
+
+void display_screen();
 
 void display_vram();
 

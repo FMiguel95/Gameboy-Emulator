@@ -51,14 +51,14 @@ int read_rom(const char* path)
 
 	cartridge.rom = rom;
 
-	// printf("title: %.16s\n", cartridge.title);
+	printf("title: %.16s\n", cartridge.title);
 	// printf("manufactor_code: %s\n", cartridge.manufactor_code);
 	// printf("cgb_flag: %u\n", cartridge.cgb_flag);
 	// printf("licensee_code_new: %s\n", cartridge.licensee_code_new);
 	// printf("sgb_flag: %u\n", cartridge.sgb_flag);
-	// printf("cartridge_type: %s\n", cartridge_types[cartridge.cartridge_type]);
-	// printf("rom_size: %s\n", rom_sizes[cartridge.rom_size]);
-	// printf("ram_size: %s\n", ram_sizes[cartridge.ram_size]);
+	printf("cartridge_type: %s\n", cartridge_types[cartridge.cartridge_type]);
+	printf("rom_size: %s\n", rom_sizes[cartridge.rom_size]);
+	printf("ram_size: %s\n", ram_sizes[cartridge.ram_size]);
 	// printf("destination_code: %s\n", destination_codes[cartridge.destination_code]);
 	// printf("licensee_code_old: %s\n", old_licensee_codes[cartridge.licensee_code_old]);
 	// printf("rom_version_number: %u\n", cartridge.rom_version_number);

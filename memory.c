@@ -24,7 +24,11 @@ void write8(u16 address, u8 val)
 	else if (address < 0xFE00)
 		memory.echo_ram[address - 0xE000] = val;
 	else if (address < 0xFEA0)
-		memory.oam[address - 0xFE00] = val;
+	{
+		u8 ppu_mode = read8(STAT) & 0b11;
+		if (ppu_mode == 0 || ppu_mode == 1)
+			memory.oam[address - 0xFE00] = val;
+	}
 	else if (address < 0xFF00)
 		memory.unused[address - 0xFEA0] = val;
 	else if (address < 0xFF80)
@@ -64,7 +68,13 @@ u8 read8(u16 address)
 	else if (address < 0xFE00)
 		return memory.echo_ram[address - 0xE000];
 	else if (address < 0xFEA0)
-		return memory.oam[address - 0xFE00];
+	{
+		u8 ppu_mode = read8(STAT) & 0b11;
+		if (ppu_mode == 0 || ppu_mode == 1)
+			return memory.oam[address - 0xFE00];
+		else
+			return 0xFF;
+	}
 	else if (address < 0xFF00)
 		return memory.unused[address - 0xFEA0];
 	else if (address < 0xFF80)

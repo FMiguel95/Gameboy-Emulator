@@ -2,6 +2,8 @@
 # define PPU_H
 
 # include "types.h"
+# include "tile.h"
+# include "object.h"
 # include "memory.h"
 # include "cpu.h"
 
@@ -19,7 +21,13 @@ typedef struct {
 	u8* wy;		// Window Y position
 	u8* wx;		// Window X position
 
+	object_t* object_attributes;
+	object_t scanline_objects[10];
+
 	int scanline_cycle;
+	int window_line_counter;
+
+	int pixel_buffer[23040];	// 160 * 144
 } ppu_t;
 
 extern ppu_t ppu;
@@ -67,5 +75,9 @@ void ppu_set_mode(ppu_mode mode);
 ppu_mode ppu_get_mode();
 
 int is_stat(u8 stat);
+
+void oam_scan();
+
+void draw_scanline();
 
 #endif

@@ -4,6 +4,7 @@ emulator_t emulator;
 
 int init_app()
 {
+	printf("%ld\n", sizeof(ppu.object_attributes));
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		printf("SDL initialization failed: %s\n", SDL_GetError());
@@ -14,6 +15,7 @@ int init_app()
 	init_window(&emulator.window_background9800, "Background $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	init_window(&emulator.window_background9C00, "Background $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 
 	emulator.paused = 0;
 	emulator.quit = 0;
@@ -69,6 +71,12 @@ void close_app()
 	SDL_DestroyRenderer(emulator.window_background9800.renderer);
 	SDL_DestroyWindow(emulator.window_background9800.window);
 
+	SDL_DestroyRenderer(emulator.window_background9C00.renderer);
+	SDL_DestroyWindow(emulator.window_background9C00.window);
+
+	SDL_DestroyRenderer(emulator.window_screen.renderer);
+	SDL_DestroyWindow(emulator.window_screen.window);
+
 	SDL_Quit();
 }
 
@@ -90,6 +98,7 @@ int run_emulator()
 			}
 		}
 
+		display_screen();
 		display_vram();
 		display_background(&emulator.window_background9800, 0x1800);
 		display_background(&emulator.window_background9C00, 0x1C00);
@@ -166,6 +175,12 @@ void display_background(window_t* window, u16 start_address)
 	draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, 0xFF0000, window->screen_surface->pixels);
 	
 	render_window(window);
+}
+
+void display_screen()
+{
+	emulator.window_screen.screen_surface->pixels = (int*)(&ppu.pixel_buffer);
+	render_window(&emulator.window_screen);
 }
 
 void handle_events()

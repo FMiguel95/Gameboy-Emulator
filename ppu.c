@@ -19,6 +19,8 @@ int init_ppu()
 	ppu.wy = memory.io_registers + 0x4A;
 	ppu.wx = memory.io_registers + 0x4B;
 
+	ppu.object_attributes = (object_t*)(&(memory.oam[0]));
+
 	return 1;
 }
 
@@ -26,19 +28,25 @@ void ppu_tick()
 {
 	u8 prev_stat = *ppu.stat;
 
-	for (size_t i = 0; i < 4; i++)
-	{
+	// for (size_t i = 0; i < 4; i++)
+	// {
 		
-	}
+	// }
 
 	ppu.scanline_cycle++;
 
 	if (*ppu.ly < 144)
 	{
 		if (ppu.scanline_cycle == 0)
+		{
 			ppu_set_mode(OAM_scan);
+			oam_scan();
+		}
 		else if (ppu.scanline_cycle == 20)
+		{
 			ppu_set_mode(draw);
+			draw_scanline();
+		}
 		else if (ppu.scanline_cycle == 63)
 			ppu_set_mode(h_blank);
 	}
@@ -47,7 +55,6 @@ void ppu_tick()
 	{
 		ppu.scanline_cycle = 0;
 		(*ppu.ly)++;
-		set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
 		if (*ppu.ly == 144)
 		{
 			ppu_set_mode(v_blank);
@@ -63,11 +70,13 @@ void ppu_tick()
 		}
 	}
 
+	set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
 	if (!is_stat(prev_stat) && is_stat(*ppu.stat))
 	{
 		u8 IF_val = read8(IF);
 		set_flag(&IF_val, LCD, 1);
 		write8(IF, IF_val);
+		printf("STAT irq\n");
 	}
 }
 
@@ -83,8 +92,12 @@ ppu_mode ppu_get_mode()
 
 int is_stat(u8 stat)
 {
-	if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
+	// if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
+	if (get_flag(stat, STAT_6) && (*ppu.ly == *ppu.lyc))
+	{
+		printf("ly==lyc at line %d\n", *ppu.ly);
 		return 1;
+	}
 	
 	if (get_flag(stat, STAT_3) && (stat & 0b11) == h_blank)
 		return 1;
@@ -96,4 +109,52 @@ int is_stat(u8 stat)
 		return 1;
 	
 	return 0;
+}
+
+void oam_scan()
+{
+	int stored_count = 0;
+
+	int sprite_mode = get_flag(*ppu.lcdc, LCDC_2);
+	u8 sprite_height = sprite_mode == 0 ? 8 : 16;
+	for (size_t i = 0; i < 40; i++)
+	{
+		if (stored_count == 10)
+			break;
+		if (ppu.object_attributes[i].x_pos > 0 &&
+			(*ppu.ly + 16) >= ppu.object_attributes[i].y_pos &&
+			(*ppu.ly + 16) < (ppu.object_attributes[i].y_pos + sprite_height))
+		{
+			ppu.scanline_objects[stored_count++] = ppu.object_attributes[i];
+		}
+	}
+}
+
+void draw_scanline()
+{
+	u8 bg_window_enable = get_flag(*ppu.lcdc, LCDC_0);	// 0 hides both background and window
+	u8 object_enable = get_flag(*ppu.lcdc, LCDC_1);		// 0 hides objects
+	u8 object_size = get_flag(*ppu.lcdc, LCDC_2);		// 0 makes objects 8x8, 1 makes objects 8x16
+	u8 bg_tile_map = get_flag(*ppu.lcdc, LCDC_3);		// 0 background uses tile map at $9C00, 1 uses tile map at $9800
+	u8 tile_data_select = get_flag(*ppu.lcdc, LCDC_4);	// 0 uses the 8800 fetch method, 1 uses the 8000
+	u8 window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
+	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9C00, 1 uses tile map at $9800
+	for (size_t i = 0; i < 160; i++)
+	{
+		int pixel_color = LIGHTER_COLOR;
+		if (bg_window_enable)
+		{
+			// get tile id
+			u16 start_address = bg_tile_map ? 0x1C00 : 0x1800;
+			int tile_id = memory.video_ram[start_address + 32 * ((*ppu.ly + *ppu.scy) / 8) + (i + *ppu.scx) / 8];
+			if (tile_data_select == 0 && tile_id < 128)
+				tile_id += 256;
+			
+			// get tile data
+			tile t = tiles[tile_id];
+			pixel_code color_code = get_pixel_code(t, (i + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+			pixel_color = get_color(color_code);
+		}
+		ppu.pixel_buffer[*ppu.ly * 160 + i] = pixel_color;
+	}
 }
