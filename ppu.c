@@ -26,12 +26,7 @@ int init_ppu()
 
 void ppu_tick()
 {
-	u8 prev_stat = *ppu.stat;
-
-	// for (size_t i = 0; i < 4; i++)
-	// {
-		
-	// }
+	static int prev_stat_state;
 
 	ppu.scanline_cycle++;
 
@@ -47,7 +42,7 @@ void ppu_tick()
 			ppu_set_mode(draw);
 			draw_scanline();
 		}
-		else if (ppu.scanline_cycle == 63)
+		else if (ppu.scanline_cycle == 73)
 			ppu_set_mode(h_blank);
 	}
 
@@ -64,20 +59,19 @@ void ppu_tick()
 			write8(IF, IF_val);
 		}
 		else if (*ppu.ly == 154) // end of frame
-		{
 			*ppu.ly = 0;
-			ppu_set_mode(OAM_scan);
-		}
 	}
 
 	set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
-	if (!is_stat(prev_stat) && is_stat(*ppu.stat))
+	int stat_state = is_stat(*ppu.stat);
+	if (!prev_stat_state && stat_state)
 	{
 		u8 IF_val = read8(IF);
 		set_flag(&IF_val, LCD, 1);
 		write8(IF, IF_val);
-		printf("STAT irq\n");
+		// printf("STAT irq line: %d\n", *ppu.ly);
 	}
+	prev_stat_state = stat_state;
 }
 
 void ppu_set_mode(ppu_mode mode)
@@ -92,12 +86,8 @@ ppu_mode ppu_get_mode()
 
 int is_stat(u8 stat)
 {
-	// if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
-	if (get_flag(stat, STAT_6) && (*ppu.ly == *ppu.lyc))
-	{
-		printf("ly==lyc at line %d\n", *ppu.ly);
+	if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
 		return 1;
-	}
 	
 	if (get_flag(stat, STAT_3) && (stat & 0b11) == h_blank)
 		return 1;
@@ -139,6 +129,7 @@ void draw_scanline()
 	u8 tile_data_select = get_flag(*ppu.lcdc, LCDC_4);	// 0 uses the 8800 fetch method, 1 uses the 8000
 	u8 window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
 	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9C00, 1 uses tile map at $9800
+
 	for (size_t i = 0; i < 160; i++)
 	{
 		int pixel_color = LIGHTER_COLOR;
@@ -146,7 +137,7 @@ void draw_scanline()
 		{
 			// get tile id
 			u16 start_address = bg_tile_map ? 0x1C00 : 0x1800;
-			int tile_id = memory.video_ram[start_address + 32 * ((*ppu.ly + *ppu.scy) / 8) + (i + *ppu.scx) / 8];
+			int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((i + *ppu.scx) & 0xFF) / 8];
 			if (tile_data_select == 0 && tile_id < 128)
 				tile_id += 256;
 			
