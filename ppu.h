@@ -26,6 +26,7 @@ typedef struct {
 
 	int scanline_cycle;
 	int window_line_counter;
+	int wy_equaled_ly;
 
 	int pixel_buffer[23040];	// 160 * 144
 } ppu_t;

@@ -30,6 +30,9 @@ void ppu_tick()
 
 	ppu.scanline_cycle++;
 
+	if (*ppu.wy == *ppu.ly)
+		ppu.wy_equaled_ly = 1;
+
 	if (*ppu.ly < 144)
 	{
 		if (ppu.scanline_cycle == 0)
@@ -57,6 +60,9 @@ void ppu_tick()
 			u8 IF_val = read8(IF);
 			set_flag(&IF_val, VBlank, 1);
 			write8(IF, IF_val);
+			// reset window stuff
+			ppu.window_line_counter = -1;
+			ppu.wy_equaled_ly = 0;
 		}
 		else if (*ppu.ly == 154) // end of frame
 			*ppu.ly = 0;
@@ -120,6 +126,11 @@ void oam_scan()
 	}
 }
 
+pixel_code get_bg_win_pixel()
+{
+
+}
+
 void draw_scanline()
 {
 	u8 bg_window_enable = get_flag(*ppu.lcdc, LCDC_0);	// 0 hides both background and window
@@ -130,22 +141,46 @@ void draw_scanline()
 	u8 window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
 	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9C00, 1 uses tile map at $9800
 
+	int has_window = 0;
+	size_t x_pos = 0;
+
 	for (size_t i = 0; i < 160; i++)
 	{
-		int pixel_color = LIGHTER_COLOR;
+		pixel_code color_code = LIGHTER_CODE;
 		if (bg_window_enable)
 		{
-			// get tile id
-			u16 start_address = bg_tile_map ? 0x1C00 : 0x1800;
-			int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((i + *ppu.scx) & 0xFF) / 8];
-			if (tile_data_select == 0 && tile_id < 128)
-				tile_id += 256;
-			
-			// get tile data
-			tile t = tiles[tile_id];
-			pixel_code color_code = get_pixel_code(t, (i + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
-			pixel_color = get_color(color_code);
+			if (window_enable && ppu.wy_equaled_ly && i >= *ppu.wx - 7) // draw from window
+			{
+				if (!has_window)
+				{
+					has_window = 1;
+					ppu.window_line_counter++;
+					x_pos = 0;
+				}
+				// get tile id
+				u16 start_address = window_tile_map ? 0x1C00 : 0x1800;
+				int tile_id = memory.video_ram[start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (x_pos & 0xFF) / 8];
+				if (tile_data_select == 0 && tile_id < 128)
+					tile_id += 256;
+				
+				// get tile data
+				tile t = tiles[tile_id];
+				color_code = get_pixel_code(t, x_pos % 8, ppu.window_line_counter % 8);
+			}
+			else // draw from background
+			{
+				// get tile id
+				u16 start_address = bg_tile_map ? 0x1C00 : 0x1800;
+				int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((x_pos + *ppu.scx) & 0xFF) / 8];
+				if (tile_data_select == 0 && tile_id < 128)
+					tile_id += 256;
+				
+				// get tile data
+				tile t = tiles[tile_id];
+				color_code = get_pixel_code(t, (x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+			}
 		}
-		ppu.pixel_buffer[*ppu.ly * 160 + i] = pixel_color;
+		ppu.pixel_buffer[*ppu.ly * 160 + i] = get_color(color_code);
+		x_pos++;
 	}
 }
