@@ -67,12 +67,16 @@ typedef struct {
 extern memory_t memory;
 
 void write8(u16 address, u8 val);
+void write8_absolute(u16 address, u8 val);
 
 void write16(u16 address, u16 val);
 
 u8 read8(u16 address);
+u8 read8_absolute(u16 address);
 
 u16 read16(u16 address);
+
+void oam_dma_transfer(u8 val);
 
 u8 get_flag(u8 byte, u8 bit);
 

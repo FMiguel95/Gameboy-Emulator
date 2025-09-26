@@ -4,7 +4,6 @@ emulator_t emulator;
 
 int init_app()
 {
-	printf("%ld\n", sizeof(ppu.object_attributes));
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		printf("SDL initialization failed: %s\n", SDL_GetError());
@@ -12,8 +11,8 @@ int init_app()
 		return 0;
 	}
 
-	init_window(&emulator.window_background9800, "Background $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	init_window(&emulator.window_background9C00, "Background $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 

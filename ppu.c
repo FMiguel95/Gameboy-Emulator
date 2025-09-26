@@ -19,7 +19,7 @@ int init_ppu()
 	ppu.wy = memory.io_registers + 0x4A;
 	ppu.wx = memory.io_registers + 0x4B;
 
-	ppu.object_attributes = (object_t*)(&(memory.oam[0]));
+	ppu.object_attributes = (object_t*)memory.oam;
 
 	return 1;
 }
@@ -51,7 +51,7 @@ void ppu_tick()
 
 	if (ppu.scanline_cycle == 114) // end of scanline
 	{
-		ppu.scanline_cycle = 0;
+		ppu.scanline_cycle = -1;
 		(*ppu.ly)++;
 		if (*ppu.ly == 144)
 		{
@@ -109,12 +109,14 @@ int is_stat(u8 stat)
 
 void oam_scan()
 {
-	int stored_count = 0;
-
+	memset(ppu.scanline_objects, 0, sizeof(ppu.scanline_objects));
 	int sprite_mode = get_flag(*ppu.lcdc, LCDC_2);
 	u8 sprite_height = sprite_mode == 0 ? 8 : 16;
+	int stored_count = 0;
 	for (size_t i = 0; i < 40; i++)
 	{
+		// if (*ppu.ly == 5)
+		// 	printf("obj %ld y_pos:%d x_pos:%d tile_index:%d attributes:%d\n", i, ppu.object_attributes[i].y_pos, ppu.object_attributes[i].x_pos, ppu.object_attributes[i].tile_index, ppu.object_attributes[i].attributes);
 		if (stored_count == 10)
 			break;
 		if (ppu.object_attributes[i].x_pos > 0 &&
@@ -124,6 +126,11 @@ void oam_scan()
 			ppu.scanline_objects[stored_count++] = ppu.object_attributes[i];
 		}
 	}
+	// if (*ppu.ly == 5)
+	// 	printf("...............................\n");
+	// if (stored_count > 0)
+	// 	printf("ly %d stored:%d\n", *ppu.ly, stored_count);
+
 }
 
 pixel_code get_bg_win_pixel()
@@ -136,10 +143,10 @@ void draw_scanline()
 	u8 bg_window_enable = get_flag(*ppu.lcdc, LCDC_0);	// 0 hides both background and window
 	u8 object_enable = get_flag(*ppu.lcdc, LCDC_1);		// 0 hides objects
 	u8 object_size = get_flag(*ppu.lcdc, LCDC_2);		// 0 makes objects 8x8, 1 makes objects 8x16
-	u8 bg_tile_map = get_flag(*ppu.lcdc, LCDC_3);		// 0 background uses tile map at $9C00, 1 uses tile map at $9800
+	u8 bg_tile_map = get_flag(*ppu.lcdc, LCDC_3);		// 0 background uses tile map at $9800, 1 uses tile map at $9C00
 	u8 tile_data_select = get_flag(*ppu.lcdc, LCDC_4);	// 0 uses the 8800 fetch method, 1 uses the 8000
 	u8 window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
-	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9C00, 1 uses tile map at $9800
+	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9800, 1 uses tile map at $9C00
 
 	int has_window = 0;
 	size_t x_pos = 0;
@@ -147,7 +154,20 @@ void draw_scanline()
 	for (size_t i = 0; i < 160; i++)
 	{
 		pixel_code color_code = LIGHTER_CODE;
-		if (bg_window_enable)
+		// get object pixel
+		for (size_t j = 0; j < 10; j++)
+		{
+			int sprite_x = ppu.scanline_objects[j].x_pos - 8;
+			int sprite_y = ppu.scanline_objects[j].y_pos - 16;
+			if (i >= sprite_x && i < sprite_x + 8)
+			{
+				tile t = tiles[ppu.scanline_objects[j].tile_index];
+				color_code = get_pixel_code(t, i - sprite_x, *ppu.ly - sprite_y);
+				break;
+			}
+		}
+
+		if (bg_window_enable && color_code == LIGHTER_CODE)
 		{
 			if (window_enable && ppu.wy_equaled_ly && i >= *ppu.wx - 7) // draw from window
 			{
