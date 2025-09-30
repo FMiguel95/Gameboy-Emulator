@@ -13,23 +13,21 @@ void write8(u16 address, u8 val)
 		return write_joypad(val);
 
 	if (address < 0x4000)
-		// memory.rom_bank0[address] = val;
-		return;
+		write_mbc1(address, val);
 	else if (address < 0x8000)
-		// memory.rom_bank1[address - 0x4000] = val;
-		return;
+		write_mbc1(address, val);
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
-	else if (address < 0xC000)
-		memory.external_ram[address - 0xA000] = val;
+	else if (address < 0xC000 && cartridge.ram)
+		(cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000] = val;
 	else if (address < 0xE000)
 		memory.work_ram[address - 0xC000] = val;
 	else if (address < 0xFE00)
 		memory.echo_ram[address - 0xE000] = val;
 	else if (address < 0xFEA0)
 	{
-		u8 ppu_mode = read8(STAT) & 0b11;
-		if (ppu_mode == 0 || ppu_mode == 1)
+		// u8 ppu_mode = read8(STAT) & 0b11;
+		// if (ppu_mode == 0 || ppu_mode == 1)
 			memory.oam[address - 0xFE00] = val;
 	}
 	else if (address < 0xFF00)
@@ -87,11 +85,11 @@ u8 read8(u16 address)
 	else if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
-		return memory.rom_bank1[address - 0x4000];
+		return (cartridge.rom + 0x4000 * cartridge.mbc.selected_rom_bank)[address - 0x4000];
 	else if (address < 0xA000)
 		return memory.video_ram[address - 0x8000];
 	else if (address < 0xC000)
-		return memory.external_ram[address - 0xA000];
+		return (cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000];
 	else if (address < 0xE000)
 		return memory.work_ram[address - 0xC000];
 	else if (address < 0xFE00)
@@ -188,8 +186,10 @@ int init_memory()
 	// }
 
 	memory = (memory_t){0};
-	memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
-	memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
+	// memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
+	// memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
+	memory.rom_bank0 = cartridge.rom;
+	memory.rom_bank1 = cartridge.rom + 0x4000;
 
 	// write8(LY, 0x90);
 

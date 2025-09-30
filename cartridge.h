@@ -8,13 +8,40 @@
 # include <string.h>
 
 typedef struct {
+	int ram_enable;
+	u8 rom_bank_number_mask;
+	u8 selected_rom_bank;
+	u8 selected_ram_bank;
+
+	u8 reg_rom_bank_number;		// lower 5 bits
+	u8 reg_rom_ram_bank_number;	// 2 bits
+	u8 reg_rom_ram_mode_select;	// 1 bit
+
+} mbc1_t;
+
+typedef struct {
+
+} mbc2_t;
+
+typedef struct {
+
+} mbc3_t;
+
+typedef struct {
+
+} mbc5_t;
+
+typedef struct {
 	u8* rom;
-	// entry point				// 0100-0103
-	u8 nintendo_logo[48];		// 0104-0133
-	u8 title[16];				// 0134-0143
-	u8 manufactor_code[4];		// 013F-0142
+	u8* ram;
+	mbc1_t mbc;
+
+	// entry point				// 0100 - 0103
+	u8 nintendo_logo[48];		// 0104 - 0133
+	u8 title[16];				// 0134 - 0143
+	u8 manufactor_code[4];		// 013F - 0142
 	u8 cgb_flag;				// 0143
-	u8 licensee_code_new[2];	// 0144–0145
+	u8 licensee_code_new[2];	// 0144 - 0145
 	u8 sgb_flag;				// 0146
 	u8 cartridge_type;			// 0147
 	u8 rom_size;				// 0148
@@ -27,6 +54,10 @@ typedef struct {
 } cartridge_t;
 
 extern cartridge_t cartridge;
+
+void write_mbc1(u16 address, u8 val);
+
+void update_banks_mbc1();
 
 static const char* cartridge_types[0x100] = {
 	[0x00] = "ROM ONLY",
@@ -235,5 +266,7 @@ static const char* old_licensee_codes[0x100] = {
 };
 
 int read_rom(const char* path);
+
+int init_mbc();
 
 #endif

@@ -10,6 +10,8 @@ int main(int ac, char** av)
 
 	if (!read_rom(av[1]))
 		return 1;
+	if (!init_mbc())
+		return 1;
 	if (!init_memory())
 		return 1;
 	if (!init_tiles())

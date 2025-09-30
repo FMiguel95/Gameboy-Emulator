@@ -51,10 +51,13 @@
 # define IE		0xFFFF // Interrupt enable	R/W
 
 typedef struct {
-	u8 rom_bank0[0x4000];		// 0000 - 3FFF
-	u8 rom_bank1[0x4000];		// 4000 - 7FFF
+	// u8 rom_bank0[0x4000];	// 0000 - 3FFF
+	u8* rom_bank0;				// 0000 - 3FFF
+	// u8 rom_bank1[0x4000];	// 4000 - 7FFF
+	u8* rom_bank1;				// 4000 - 7FFF
 	u8 video_ram[0x2000];		// 8000 - 9FFF
-	u8 external_ram[0x2000];	// A000 - BFFF
+	// u8 external_ram[0x2000];	// A000 - BFFF
+	u8* external_ram;			// A000 - BFFF
 	u8 work_ram[0x2000];		// C000 - DFFF
 	u8 echo_ram[0x1E00];		// E000 - FDFF
 	u8 oam[0xA0];				// FE00 - FE9F
