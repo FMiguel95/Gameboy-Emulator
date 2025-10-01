@@ -265,6 +265,10 @@ void opcode10() { STOP(); }
 void LD_r8r8(u8* r1, u8* r2) // 1 1
 {
 	*r1 = *r2;
+	// if (r1 == cpu.reg8_B && r2 == cpu.reg8_B)
+	// {
+	// 	cpu_log();
+	// }
 }
 void opcode40() { LD_r8r8(cpu.reg8_B, cpu.reg8_B); }
 void opcode41() { LD_r8r8(cpu.reg8_B, cpu.reg8_C); }

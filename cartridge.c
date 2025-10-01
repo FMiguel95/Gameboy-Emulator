@@ -124,6 +124,10 @@ void update_banks_mbc1()
 	cartridge.mbc.selected_ram_bank = 0;
 	if (cartridge.mbc.reg_rom_ram_mode_select == 1)
 		cartridge.mbc.selected_ram_bank = cartridge.mbc.reg_rom_ram_bank_number;
+	if (cartridge.ram_size < 0x03)
+		cartridge.mbc.selected_ram_bank = 0;
+
+	// printf("rom_bank:%d ram_bank:%d\n", cartridge.mbc.selected_rom_bank, cartridge.mbc.selected_ram_bank);
 }
 
 int init_mbc()
@@ -136,7 +140,7 @@ int init_mbc()
 	cartridge.mbc.rom_bank_number_mask = 1;
 	for (size_t i = 0; i < cartridge.rom_size; i++)
 	{
-		cartridge.mbc.rom_bank_number_mask << 1;
+		cartridge.mbc.rom_bank_number_mask <<= 1;
 		cartridge.mbc.rom_bank_number_mask++;
 	}
 	return 1;
