@@ -91,43 +91,82 @@ int read_rom(const char* path)
 	return 1;
 }
 
+mbc_t* no_mbc()
+{
+	mbc_t* mbc = malloc(sizeof(mbc_t));
+	mbc->ram_enable = 0;
+	mbc->rom_bank_number_mask = 1;
+	mbc->selected_rom_bank = 1;
+	mbc->selected_ram_bank = 0;
+	mbc->write_mbc = &write_mbc0;
+	return mbc;
+}
+
+mbc_t* new_mbc1()
+{
+	mbc1_t* mbc = malloc(sizeof(mbc1_t));
+
+	mbc->ram_enable = 0;
+	mbc->rom_bank_number_mask = 1;
+	mbc->rom_bank_number_mask = 1;
+	for (size_t i = 0; i < cartridge.rom_size; i++)
+	{
+		mbc->rom_bank_number_mask <<= 1;
+		mbc->rom_bank_number_mask++;
+	}
+	mbc->selected_rom_bank = 1;
+	mbc->selected_ram_bank = 0;
+	mbc->write_mbc = &write_mbc1;
+
+	return (mbc_t*)mbc;
+}
+
+void write_mbc0(u16 address, u8 val)
+{
+	return;
+}
+
 void write_mbc1(u16 address, u8 val)
 {
+	mbc1_t* mbc = (mbc1_t*)cartridge.mbc;
+
 	if (address < 0x2000) // RAM Enable
 	{
 		if ((val & 0b1111) == 0x0A)
-			cartridge.mbc.ram_enable = 1;
+			mbc->ram_enable = 1;
 		else
-			cartridge.mbc.ram_enable = 0;
+			mbc->ram_enable = 0;
 	}
 	else if (address < 0x4000) // ROM Bank Number
-		cartridge.mbc.reg_rom_bank_number = val & 0b11111;
+		mbc->reg_rom_bank_number = val & 0b11111;
 	else if (address < 0x6000) // RAM Bank Number - or - Upper Bits of ROM Bank Number
-		cartridge.mbc.reg_rom_ram_bank_number = val & 0b11;
+		mbc->reg_rom_ram_bank_number = val & 0b11;
 	else if (address < 0x8000) // ROM/RAM Mode Select
-		cartridge.mbc.reg_rom_ram_mode_select = val & 1;
+		mbc->reg_rom_ram_mode_select = val & 1;
 
 	update_banks_mbc1();
 }
 
 void update_banks_mbc1()
 {
+	mbc1_t* mbc = (mbc1_t*)cartridge.mbc;
+
 	// rom bank
-	cartridge.mbc.selected_rom_bank = cartridge.mbc.reg_rom_bank_number;
-	if (cartridge.mbc.selected_rom_bank == 0)
-		cartridge.mbc.selected_rom_bank = 1;
-	if (cartridge.mbc.reg_rom_ram_mode_select == 0)
-		cartridge.mbc.selected_rom_bank = (cartridge.mbc.reg_rom_ram_bank_number << 5) | cartridge.mbc.reg_rom_bank_number;
-	cartridge.mbc.selected_rom_bank &= cartridge.mbc.rom_bank_number_mask;
+	mbc->selected_rom_bank = mbc->reg_rom_bank_number;
+	if (mbc->selected_rom_bank == 0)
+		mbc->selected_rom_bank = 1;
+	if (mbc->reg_rom_ram_mode_select == 0)
+		mbc->selected_rom_bank = (mbc->reg_rom_ram_bank_number << 5) | mbc->reg_rom_bank_number;
+	mbc->selected_rom_bank &= mbc->rom_bank_number_mask;
 
 	// ram bank
-	cartridge.mbc.selected_ram_bank = 0;
-	if (cartridge.mbc.reg_rom_ram_mode_select == 1)
-		cartridge.mbc.selected_ram_bank = cartridge.mbc.reg_rom_ram_bank_number;
+	mbc->selected_ram_bank = 0;
+	if (mbc->reg_rom_ram_mode_select == 1)
+		mbc->selected_ram_bank = mbc->reg_rom_ram_bank_number;
 	if (cartridge.ram_size < 0x03)
-		cartridge.mbc.selected_ram_bank = 0;
+		mbc->selected_ram_bank = 0;
 
-	// printf("rom_bank:%d ram_bank:%d\n", cartridge.mbc.selected_rom_bank, cartridge.mbc.selected_ram_bank);
+	// printf("rom_bank:%d ram_bank:%d\n", mbc->selected_rom_bank, mbc->selected_ram_bank);
 }
 
 int init_mbc()
@@ -137,11 +176,10 @@ int init_mbc()
 		printf("Invalid rom size byte in header (%X)\n", cartridge.rom_size);
 		return 0;
 	}
-	cartridge.mbc.rom_bank_number_mask = 1;
-	for (size_t i = 0; i < cartridge.rom_size; i++)
-	{
-		cartridge.mbc.rom_bank_number_mask <<= 1;
-		cartridge.mbc.rom_bank_number_mask++;
-	}
+
+	if (cartridge.cartridge_type == 0x00)
+		cartridge.mbc = no_mbc();
+	else
+		cartridge.mbc = new_mbc1();
 	return 1;
 }

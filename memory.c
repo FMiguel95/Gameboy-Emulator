@@ -12,14 +12,12 @@ void write8(u16 address, u8 val)
 	if (address == JOYP)
 		return write_joypad(val);
 
-	if (address < 0x4000)
-		write_mbc1(address, val);
-	else if (address < 0x8000)
-		write_mbc1(address, val);
+	if (address < 0x8000)
+		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
 	else if (address < 0xC000 && cartridge.ram)
-		(cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000] = val;
+		(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
 	else if (address < 0xE000)
 		memory.work_ram[address - 0xC000] = val;
 	else if (address < 0xFE00)
@@ -52,7 +50,7 @@ void write8_absolute(u16 address, u8 val)
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
 	else if (address < 0xC000 && cartridge.ram)
-		(cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000] = val;
+		(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
 	else if (address < 0xE000)
 		memory.work_ram[address - 0xC000] = val;
 	else if (address < 0xFE00)
@@ -85,11 +83,11 @@ u8 read8(u16 address)
 	else if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
-		return (cartridge.rom + 0x4000 * cartridge.mbc.selected_rom_bank)[address - 0x4000];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom_bank)[address - 0x4000];
 	else if (address < 0xA000)
 		return memory.video_ram[address - 0x8000];
 	else if (address < 0xC000)
-		return (cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000];
+		return (cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000];
 	else if (address < 0xE000)
 		return memory.work_ram[address - 0xC000];
 	else if (address < 0xFE00)
@@ -119,11 +117,11 @@ u8 read8_absolute(u16 address)
 	else if (address < 0x4000)
 		return memory.rom_bank0[address];
 	else if (address < 0x8000)
-		return (cartridge.rom + 0x4000 * cartridge.mbc.selected_rom_bank)[address - 0x4000];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom_bank)[address - 0x4000];
 	else if (address < 0xA000)
 		return memory.video_ram[address - 0x8000];
 	else if (address < 0xC000)
-		return (cartridge.ram + 0x2000 * cartridge.mbc.selected_ram_bank)[address - 0xA000];
+		return (cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000];
 	else if (address < 0xE000)
 		return memory.work_ram[address - 0xC000];
 	else if (address < 0xFE00)

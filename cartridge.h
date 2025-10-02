@@ -8,16 +8,31 @@
 # include <string.h>
 
 typedef struct {
-	int ram_enable;
-	u8 rom_bank_number_mask;
 	u8 selected_rom_bank;
 	u8 selected_ram_bank;
+	u8 rom_bank_number_mask;
+	int ram_enable;
+
+	void (*write_mbc)(u16, u8);
+} mbc_t;
+
+mbc_t* no_mbc();
+
+typedef struct {
+	u8 selected_rom_bank;
+	u8 selected_ram_bank;
+	u8 rom_bank_number_mask;
+	int ram_enable;
+
+	void (*write_mbc)(u16, u8);
 
 	u8 reg_rom_bank_number;		// lower 5 bits
 	u8 reg_rom_ram_bank_number;	// 2 bits
 	u8 reg_rom_ram_mode_select;	// 1 bit
 
 } mbc1_t;
+
+mbc_t* new_mbc1();
 
 typedef struct {
 
@@ -34,7 +49,7 @@ typedef struct {
 typedef struct {
 	u8* rom;
 	u8* ram;
-	mbc1_t mbc;
+	mbc_t* mbc;
 
 	// entry point				// 0100 - 0103
 	u8 nintendo_logo[48];		// 0104 - 0133
@@ -54,6 +69,8 @@ typedef struct {
 } cartridge_t;
 
 extern cartridge_t cartridge;
+
+void write_mbc0(u16 address, u8 val);
 
 void write_mbc1(u16 address, u8 val);
 

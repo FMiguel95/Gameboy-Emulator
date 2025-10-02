@@ -169,8 +169,9 @@ void draw_scanline()
 
 		if (bg_window_enable && color_code == LIGHTER_CODE)
 		{
-			if (window_enable && ppu.wy_equaled_ly && i >= *ppu.wx - 7) // draw from window
+			if (window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
 			{
+				printf("ly:%d\n", *ppu.ly);
 				if (!has_window)
 				{
 					has_window = 1;
