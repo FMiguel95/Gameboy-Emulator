@@ -27,6 +27,12 @@ pixel_code get_pixel_code(tile t, int x, int y)
 	return (val2 << 1) | val1;
 }
 
+pixel_code get_palette_code(pixel_code code, u16 data_address)
+{
+	u8 palette_data = read8_absolute(data_address);
+	return (palette_data >> (code * 2)) & 0b11;
+}
+
 pixel_color get_color(pixel_code code)
 {
 	switch (code) {

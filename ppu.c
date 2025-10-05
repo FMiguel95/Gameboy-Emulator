@@ -153,6 +153,7 @@ void draw_scanline()
 
 	for (size_t i = 0; i < 160; i++)
 	{
+		pixel_code palette_code = LIGHTER_CODE;
 		pixel_code color_code = LIGHTER_CODE;
 		// get object pixel
 		for (size_t j = 0; j < 10; j++)
@@ -162,16 +163,20 @@ void draw_scanline()
 			if (i >= sprite_x && i < sprite_x + 8)
 			{
 				tile t = tiles[ppu.scanline_objects[j].tile_index];
-				color_code = get_pixel_code(t, i - sprite_x, *ppu.ly - sprite_y);
+				palette_code = get_pixel_code(t, i - sprite_x, *ppu.ly - sprite_y);
+				u8 object_attributes = ppu.scanline_objects[j].attributes;
+				u8 palette_bit = get_flag(object_attributes, 4);
+				u16 palette_address = palette_bit ? OBP1 : OBP0;
+				color_code = get_palette_code(palette_code, palette_address);
 				break;
 			}
 		}
 
-		if (bg_window_enable && color_code == LIGHTER_CODE)
+		if (bg_window_enable && palette_code == LIGHTER_CODE)
 		{
 			if (window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
 			{
-				printf("ly:%d\n", *ppu.ly);
+				// printf("ly:%d\n", *ppu.ly);
 				if (!has_window)
 				{
 					has_window = 1;
@@ -186,7 +191,8 @@ void draw_scanline()
 				
 				// get tile data
 				tile t = tiles[tile_id];
-				color_code = get_pixel_code(t, x_pos % 8, ppu.window_line_counter % 8);
+				palette_code = get_pixel_code(t, x_pos % 8, ppu.window_line_counter % 8);
+				color_code = get_palette_code(palette_code, BGP);
 			}
 			else // draw from background
 			{
@@ -198,7 +204,8 @@ void draw_scanline()
 				
 				// get tile data
 				tile t = tiles[tile_id];
-				color_code = get_pixel_code(t, (x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+				palette_code = get_pixel_code(t, (x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+				color_code = get_palette_code(palette_code, BGP);
 			}
 		}
 		ppu.pixel_buffer[*ppu.ly * 160 + i] = get_color(color_code);
