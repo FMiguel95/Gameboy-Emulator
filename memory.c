@@ -37,7 +37,7 @@ void write8(u16 address, u8 val)
 	else
 		memory.ie_register[address - 0xFFFF] = val;
 
-	if (address == SC)
+	if (address == SC && val == 0x81)
 		putchar(read8(SB));
 }
 

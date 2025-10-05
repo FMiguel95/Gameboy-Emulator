@@ -162,9 +162,15 @@ void draw_scanline()
 			int sprite_y = ppu.scanline_objects[j].y_pos - 16;
 			if (i >= sprite_x && i < sprite_x + 8)
 			{
-				tile t = tiles[ppu.scanline_objects[j].tile_index];
-				palette_code = get_pixel_code(t, i - sprite_x, *ppu.ly - sprite_y);
 				u8 object_attributes = ppu.scanline_objects[j].attributes;
+				tile t = tiles[ppu.scanline_objects[j].tile_index];
+				u8 x_pixel = i - sprite_x;
+				if (get_flag(object_attributes, 5))
+					x_pixel = 7 - x_pixel;
+				u8 y_pixel = *ppu.ly - sprite_y;
+				if (get_flag(object_attributes, 6))
+					y_pixel = 7 - y_pixel;
+				palette_code = get_pixel_code(t, x_pixel, y_pixel);
 				u8 palette_bit = get_flag(object_attributes, 4);
 				u16 palette_address = palette_bit ? OBP1 : OBP0;
 				color_code = get_palette_code(palette_code, palette_address);

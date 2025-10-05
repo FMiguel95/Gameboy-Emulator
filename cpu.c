@@ -1940,8 +1940,8 @@ void opcodeCB() { PREFIX(); }
 void hole(char* str)
 {
 	printf("opcode hole %s\n", str);
-	while (1)
-		sleep(1000);
+	// while (1)
+	// 	sleep(1000);
 }
 void opcodeD3() { hole("D3"); }
 void opcodeDB() { hole("DB"); }
