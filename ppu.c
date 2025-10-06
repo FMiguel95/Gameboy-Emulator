@@ -178,7 +178,7 @@ void draw_scanline()
 			}
 		}
 
-		if (bg_window_enable && palette_code == LIGHTER_CODE)
+		if (bg_window_enable && (palette_code == LIGHTER_CODE || !object_enable))
 		{
 			if (window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
 			{

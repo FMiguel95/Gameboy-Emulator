@@ -96,7 +96,8 @@ mbc_t* no_mbc()
 	mbc_t* mbc = malloc(sizeof(mbc_t));
 	mbc->ram_enable = 0;
 	mbc->rom_bank_number_mask = 1;
-	mbc->selected_rom_bank = 1;
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = 1;
 	mbc->selected_ram_bank = 0;
 	mbc->write_mbc = &write_mbc0;
 	return mbc;
@@ -107,14 +108,17 @@ mbc_t* new_mbc1()
 	mbc1_t* mbc = malloc(sizeof(mbc1_t));
 
 	mbc->ram_enable = 0;
-	mbc->rom_bank_number_mask = 1;
+	mbc->reg_rom_bank_number = 1;
+	mbc->reg_rom_ram_bank_number = 0;
+	mbc->reg_rom_ram_mode_select = 0;
 	mbc->rom_bank_number_mask = 1;
 	for (size_t i = 0; i < cartridge.rom_size; i++)
 	{
 		mbc->rom_bank_number_mask <<= 1;
 		mbc->rom_bank_number_mask++;
 	}
-	mbc->selected_rom_bank = 1;
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = 1;
 	mbc->selected_ram_bank = 0;
 	mbc->write_mbc = &write_mbc1;
 
@@ -131,12 +135,7 @@ void write_mbc1(u16 address, u8 val)
 	mbc1_t* mbc = (mbc1_t*)cartridge.mbc;
 
 	if (address < 0x2000) // RAM Enable
-	{
-		if ((val & 0b1111) == 0x0A)
-			mbc->ram_enable = 1;
-		else
-			mbc->ram_enable = 0;
-	}
+		mbc->ram_enable = (val & 0b1111) == 0xA;
 	else if (address < 0x4000) // ROM Bank Number
 		mbc->reg_rom_bank_number = val & 0b11111;
 	else if (address < 0x6000) // RAM Bank Number - or - Upper Bits of ROM Bank Number
@@ -152,21 +151,22 @@ void update_banks_mbc1()
 	mbc1_t* mbc = (mbc1_t*)cartridge.mbc;
 
 	// rom bank
-	mbc->selected_rom_bank = mbc->reg_rom_bank_number;
-	if (mbc->selected_rom_bank == 0)
-		mbc->selected_rom_bank = 1;
-	if (mbc->reg_rom_ram_mode_select == 0)
-		mbc->selected_rom_bank = (mbc->reg_rom_ram_bank_number << 5) | mbc->reg_rom_bank_number;
-	mbc->selected_rom_bank &= mbc->rom_bank_number_mask;
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = mbc->reg_rom_bank_number;
+	if (mbc->selected_rom2_bank == 0)
+		mbc->selected_rom2_bank = 1;
+	mbc->selected_rom2_bank = (mbc->reg_rom_ram_bank_number << 5) | mbc->selected_rom2_bank;
+	if (mbc->reg_rom_ram_mode_select == 1)
+		mbc->selected_rom1_bank = mbc->reg_rom_ram_bank_number << 5;
+	mbc->selected_rom1_bank &= mbc->rom_bank_number_mask;
+	mbc->selected_rom2_bank &= mbc->rom_bank_number_mask;
 
 	// ram bank
 	mbc->selected_ram_bank = 0;
-	if (mbc->reg_rom_ram_mode_select == 1)
+	if (cartridge.ram_size > 0x02 && mbc->reg_rom_ram_mode_select == 1)
 		mbc->selected_ram_bank = mbc->reg_rom_ram_bank_number;
-	if (cartridge.ram_size < 0x03)
-		mbc->selected_ram_bank = 0;
 
-	// printf("rom_bank:%d ram_bank:%d\n", mbc->selected_rom_bank, mbc->selected_ram_bank);
+	// printf("mode:%d reg_rom_bank_number:%d selected_rom2_bank:%d\n", mbc->reg_rom_ram_mode_select,mbc->reg_rom_bank_number, mbc->selected_rom2_bank);
 }
 
 int init_mbc()

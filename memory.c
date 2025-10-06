@@ -16,7 +16,7 @@ void write8(u16 address, u8 val)
 		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
-	else if (address < 0xC000 && cartridge.ram)
+	else if (address < 0xC000 && cartridge.ram && cartridge.mbc->ram_enable)
 		(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
 	else if (address < 0xE000)
 		memory.work_ram[address - 0xC000] = val;
@@ -81,13 +81,17 @@ u8 read8(u16 address)
 	if (!memory.io_registers[0x50] && address < 0x0100)
 		return boot_rom[address];
 	else if (address < 0x4000)
-		return memory.rom_bank0[address];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom1_bank)[address];
 	else if (address < 0x8000)
-		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom_bank)[address - 0x4000];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom2_bank)[address - 0x4000];
 	else if (address < 0xA000)
 		return memory.video_ram[address - 0x8000];
 	else if (address < 0xC000)
+	{
+		if (!cartridge.ram || !cartridge.mbc->ram_enable)
+			return 0xFF;
 		return (cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000];
+	}
 	else if (address < 0xE000)
 		return memory.work_ram[address - 0xC000];
 	else if (address < 0xFE00)
@@ -115,9 +119,9 @@ u8 read8_absolute(u16 address)
 	if (!memory.io_registers[0x50] && address < 0x0100)
 		return boot_rom[address];
 	else if (address < 0x4000)
-		return memory.rom_bank0[address];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom1_bank)[address];
 	else if (address < 0x8000)
-		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom_bank)[address - 0x4000];
+		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom2_bank)[address - 0x4000];
 	else if (address < 0xA000)
 		return memory.video_ram[address - 0x8000];
 	else if (address < 0xC000)

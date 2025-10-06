@@ -8,7 +8,8 @@
 # include <string.h>
 
 typedef struct {
-	u8 selected_rom_bank;
+	u8 selected_rom1_bank;
+	u8 selected_rom2_bank;
 	u8 selected_ram_bank;
 	u8 rom_bank_number_mask;
 	int ram_enable;
@@ -19,7 +20,8 @@ typedef struct {
 mbc_t* no_mbc();
 
 typedef struct {
-	u8 selected_rom_bank;
+	u8 selected_rom1_bank;
+	u8 selected_rom2_bank;
 	u8 selected_ram_bank;
 	u8 rom_bank_number_mask;
 	int ram_enable;
