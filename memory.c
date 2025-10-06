@@ -99,7 +99,8 @@ u8 read8(u16 address)
 	else if (address < 0xFEA0)
 	{
 		u8 ppu_mode = read8(STAT) & 0b11;
-		if (ppu_mode == 0 || ppu_mode == 1)
+		u8 lcdc = read8(LCDC);
+		if (ppu_mode == 0 || ppu_mode == 1 || get_flag(lcdc, 7) == 0)
 			return memory.oam[address - 0xFE00];
 		else
 			return 0xFF;

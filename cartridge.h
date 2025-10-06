@@ -40,9 +40,22 @@ typedef struct {
 
 } mbc2_t;
 
-typedef struct {
+// typedef struct {
+// 	u8 selected_rom1_bank;
+// 	u8 selected_rom2_bank;
+// 	u8 selected_ram_bank;
+// 	u8 rom_bank_number_mask;
+// 	int ram_enable;
 
-} mbc3_t;
+// 	void (*write_mbc)(u16, u8);
+
+// 	u8 reg_rom_bank_number;		// lower 5 bits
+// 	u8 reg_rom_ram_bank_number;	// 2 bits
+// 	u8 reg_rom_ram_mode_select;	// 1 bit
+
+// } mbc3_t;
+
+// mbc_t* new_mbc3();
 
 typedef struct {
 

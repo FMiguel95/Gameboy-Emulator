@@ -125,6 +125,28 @@ mbc_t* new_mbc1()
 	return (mbc_t*)mbc;
 }
 
+// mbc_t* new_mbc3()
+// {
+// 	mbc1_t* mbc = malloc(sizeof(mbc3_t));
+
+// 	mbc->ram_enable = 0;
+// 	mbc->reg_rom_bank_number = 1;
+// 	mbc->reg_rom_ram_bank_number = 0;
+// 	mbc->reg_rom_ram_mode_select = 0;
+// 	mbc->rom_bank_number_mask = 1;
+// 	for (size_t i = 0; i < cartridge.rom_size; i++)
+// 	{
+// 		mbc->rom_bank_number_mask <<= 1;
+// 		mbc->rom_bank_number_mask++;
+// 	}
+// 	mbc->selected_rom1_bank = 0;
+// 	mbc->selected_rom2_bank = 1;
+// 	mbc->selected_ram_bank = 0;
+// 	mbc->write_mbc = &write_mbc3;
+
+// 	return (mbc_t*)mbc;
+// }
+
 void write_mbc0(u16 address, u8 val)
 {
 	return;

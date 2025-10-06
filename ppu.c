@@ -26,6 +26,9 @@ int init_ppu()
 
 void ppu_tick()
 {
+	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
+		return;
+
 	static int prev_stat_state;
 
 	ppu.scanline_cycle++;
