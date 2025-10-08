@@ -190,6 +190,7 @@ pixel_info get_object_pixel_info(size_t i)
 	ret.color_code = LIGHTER_CODE;
 	ret.palette_index = LIGHTER_CODE;
 
+	u8 selected_x_pos = 0xFF;
 	for (size_t j = 0; j < 10; j++)
 	{
 		int sprite_screen_x_pos = ppu.scanline_objects[j].x_pos - 8;
@@ -204,13 +205,16 @@ pixel_info get_object_pixel_info(size_t i)
 			u8 y_pixel = *ppu.ly - sprite_screen_y_pos;
 			if (get_flag(object_attributes, 6))
 				y_pixel = 7 - y_pixel;
+			
+			pixel_code palette_index = get_pixel_code(t, x_pixel, y_pixel);
+			if (palette_index == LIGHTER_CODE || selected_x_pos <= ppu.scanline_objects[j].x_pos)
+				continue;
+			selected_x_pos = ppu.scanline_objects[j].x_pos;
 			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
 			u8 palette_bit = get_flag(object_attributes, 4);
 			u16 palette_address = palette_bit ? OBP1 : OBP0;
 			ret.color_code = get_palette_code(ret.palette_index, palette_address);
 			ret.object_attributes = object_attributes;
-			if (ret.palette_index != LIGHTER_CODE)
-				break;
 		}
 	}
 	return ret;
