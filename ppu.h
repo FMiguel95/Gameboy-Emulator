@@ -44,6 +44,16 @@ typedef enum {
 	LCDC_7	// LCD enable
 } LCDC_bit;
 
+typedef struct {
+	u8 bg_window_enable;
+	u8 object_enable;
+	u8 object_size;
+	u8 bg_tile_map;
+	u8 tile_data_select;
+	u8 window_enable;
+	u8 window_tile_map;
+} LCD_control;
+
 typedef enum {
 	STAT_0,	// PPU mode R
 	STAT_1,	// PPU mode R

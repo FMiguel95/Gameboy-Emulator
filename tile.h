@@ -23,6 +23,12 @@ typedef enum {
 	DARKER_COLOR = 0x081820
 } pixel_color;
 
+typedef struct {
+	pixel_code palette_index;
+	pixel_code color_code;
+	u8 object_attributes;
+} pixel_info;
+
 int init_tiles();
 
 int convert_tile_index(u8 index);

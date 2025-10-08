@@ -27,7 +27,12 @@ int init_ppu()
 void ppu_tick()
 {
 	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
+	{
+		*ppu.ly = 0;
+		ppu.scanline_cycle = 0;
+		ppu_set_mode(v_blank);
 		return;
+	}
 
 	static int prev_stat_state;
 
@@ -136,88 +141,114 @@ void oam_scan()
 
 }
 
-pixel_code get_bg_win_pixel()
+pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_window, size_t* x_pos)
 {
+	pixel_info ret;
+	ret.color_code = LIGHTER_CODE;
+	ret.palette_index = LIGHTER_CODE;
 
+	if (lcdc_flags->window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
+	{
+		// printf("ly:%d\n", *ppu.ly);
+		if (!*has_window)
+		{
+			*has_window = 1;
+			ppu.window_line_counter++;
+			*x_pos = 0;
+		}
+		// get tile id
+		u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
+		int tile_id = memory.video_ram[start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (*x_pos & 0xFF) / 8];
+		if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+			tile_id += 256;
+		
+		// get tile data
+		tile t = tiles[tile_id];
+		ret.palette_index = get_pixel_code(t, *x_pos % 8, ppu.window_line_counter % 8);
+		ret.color_code = get_palette_code(ret.palette_index, BGP);
+	}
+	else // draw from background
+	{
+		// get tile id
+		u16 start_address = lcdc_flags->bg_tile_map ? 0x1C00 : 0x1800;
+		int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((*x_pos + *ppu.scx) & 0xFF) / 8];
+		if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+			tile_id += 256;
+		
+		// get tile data
+		tile t = tiles[tile_id];
+		ret.palette_index = get_pixel_code(t, (*x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+		ret.color_code = get_palette_code(ret.palette_index, BGP);
+	}
+
+	return ret;
+}
+
+pixel_info get_object_pixel_info(size_t i)
+{
+	pixel_info ret;
+	ret.color_code = LIGHTER_CODE;
+	ret.palette_index = LIGHTER_CODE;
+
+	for (size_t j = 0; j < 10; j++)
+	{
+		int sprite_screen_x_pos = ppu.scanline_objects[j].x_pos - 8;
+		int sprite_screen_y_pos = ppu.scanline_objects[j].y_pos - 16;
+		if (i >= sprite_screen_x_pos && i < sprite_screen_x_pos + 8)
+		{
+			u8 object_attributes = ppu.scanline_objects[j].attributes;
+			tile t = tiles[ppu.scanline_objects[j].tile_index];
+			u8 x_pixel = i - sprite_screen_x_pos;
+			if (get_flag(object_attributes, 5))
+				x_pixel = 7 - x_pixel;
+			u8 y_pixel = *ppu.ly - sprite_screen_y_pos;
+			if (get_flag(object_attributes, 6))
+				y_pixel = 7 - y_pixel;
+			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
+			u8 palette_bit = get_flag(object_attributes, 4);
+			u16 palette_address = palette_bit ? OBP1 : OBP0;
+			ret.color_code = get_palette_code(ret.palette_index, palette_address);
+			ret.object_attributes = object_attributes;
+			if (ret.palette_index != LIGHTER_CODE)
+				break;
+		}
+	}
+	return ret;
 }
 
 void draw_scanline()
 {
-	u8 bg_window_enable = get_flag(*ppu.lcdc, LCDC_0);	// 0 hides both background and window
-	u8 object_enable = get_flag(*ppu.lcdc, LCDC_1);		// 0 hides objects
-	u8 object_size = get_flag(*ppu.lcdc, LCDC_2);		// 0 makes objects 8x8, 1 makes objects 8x16
-	u8 bg_tile_map = get_flag(*ppu.lcdc, LCDC_3);		// 0 background uses tile map at $9800, 1 uses tile map at $9C00
-	u8 tile_data_select = get_flag(*ppu.lcdc, LCDC_4);	// 0 uses the 8800 fetch method, 1 uses the 8000
-	u8 window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
-	u8 window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9800, 1 uses tile map at $9C00
+	LCD_control lcdc_flags;
+	lcdc_flags.bg_window_enable = get_flag(*ppu.lcdc, LCDC_0);	// 0 hides both background and window
+	lcdc_flags.object_enable = get_flag(*ppu.lcdc, LCDC_1);		// 0 hides objects
+	lcdc_flags.object_size = get_flag(*ppu.lcdc, LCDC_2);		// 0 makes objects 8x8, 1 makes objects 8x16
+	lcdc_flags.bg_tile_map = get_flag(*ppu.lcdc, LCDC_3);		// 0 background uses tile map at $9800, 1 uses tile map at $9C00
+	lcdc_flags.tile_data_select = get_flag(*ppu.lcdc, LCDC_4);	// 0 uses the 8800 fetch method, 1 uses the 8000
+	lcdc_flags.window_enable = get_flag(*ppu.lcdc, LCDC_5);		// 0 hides the window
+	lcdc_flags.window_tile_map = get_flag(*ppu.lcdc, LCDC_6);	// 0 window uses tile map at $9800, 1 uses tile map at $9C00
 
 	int has_window = 0;
 	size_t x_pos = 0;
 
 	for (size_t i = 0; i < 160; i++)
 	{
-		pixel_code palette_code = LIGHTER_CODE;
-		pixel_code color_code = LIGHTER_CODE;
-		// get object pixel
-		for (size_t j = 0; j < 10; j++)
-		{
-			int sprite_x = ppu.scanline_objects[j].x_pos - 8;
-			int sprite_y = ppu.scanline_objects[j].y_pos - 16;
-			if (i >= sprite_x && i < sprite_x + 8)
-			{
-				u8 object_attributes = ppu.scanline_objects[j].attributes;
-				tile t = tiles[ppu.scanline_objects[j].tile_index];
-				u8 x_pixel = i - sprite_x;
-				if (get_flag(object_attributes, 5))
-					x_pixel = 7 - x_pixel;
-				u8 y_pixel = *ppu.ly - sprite_y;
-				if (get_flag(object_attributes, 6))
-					y_pixel = 7 - y_pixel;
-				palette_code = get_pixel_code(t, x_pixel, y_pixel);
-				u8 palette_bit = get_flag(object_attributes, 4);
-				u16 palette_address = palette_bit ? OBP1 : OBP0;
-				color_code = get_palette_code(palette_code, palette_address);
-				break;
-			}
-		}
+		pixel_info object_pixel_info = get_object_pixel_info(i);
+		pixel_info bg_win_pixel_info = get_bg_win_pixel_info(&lcdc_flags, i, &has_window, &x_pos);
 
-		if (bg_window_enable && (palette_code == LIGHTER_CODE || !object_enable))
+		pixel_code final_pixel_code = LIGHTER_CODE;
+
+		if (lcdc_flags.object_enable && object_pixel_info.palette_index != LIGHTER_CODE) // if objects are enabled and pixel isn't transparent
 		{
-			if (window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
-			{
-				// printf("ly:%d\n", *ppu.ly);
-				if (!has_window)
-				{
-					has_window = 1;
-					ppu.window_line_counter++;
-					x_pos = 0;
-				}
-				// get tile id
-				u16 start_address = window_tile_map ? 0x1C00 : 0x1800;
-				int tile_id = memory.video_ram[start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (x_pos & 0xFF) / 8];
-				if (tile_data_select == 0 && tile_id < 128)
-					tile_id += 256;
-				
-				// get tile data
-				tile t = tiles[tile_id];
-				palette_code = get_pixel_code(t, x_pos % 8, ppu.window_line_counter % 8);
-				color_code = get_palette_code(palette_code, BGP);
-			}
-			else // draw from background
-			{
-				// get tile id
-				u16 start_address = bg_tile_map ? 0x1C00 : 0x1800;
-				int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((x_pos + *ppu.scx) & 0xFF) / 8];
-				if (tile_data_select == 0 && tile_id < 128)
-					tile_id += 256;
-				
-				// get tile data
-				tile t = tiles[tile_id];
-				palette_code = get_pixel_code(t, (x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
-				color_code = get_palette_code(palette_code, BGP);
-			}
+			// if bg is enabled and priority is set and color isn't 0 draw bg instead
+			if (lcdc_flags.bg_window_enable && get_flag(object_pixel_info.object_attributes, 7) == 1 && bg_win_pixel_info.palette_index != LIGHTER_CODE)
+				final_pixel_code = bg_win_pixel_info.color_code;
+			else // draw object
+				final_pixel_code = object_pixel_info.color_code;
 		}
-		ppu.pixel_buffer[*ppu.ly * 160 + i] = get_color(color_code);
+		else if (lcdc_flags.bg_window_enable) // just draw background if it's enabled
+			final_pixel_code = bg_win_pixel_info.color_code;
+
+		ppu.pixel_buffer[*ppu.ly * 160 + i] = get_color(final_pixel_code);
 		x_pos++;
 	}
 }
