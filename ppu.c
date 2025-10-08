@@ -147,7 +147,7 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 	ret.color_code = LIGHTER_CODE;
 	ret.palette_index = LIGHTER_CODE;
 
-	if (lcdc_flags->window_enable && ppu.wy_equaled_ly && i >= (int)(*ppu.wx) - 7) // draw from window
+	if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
 	{
 		// printf("ly:%d\n", *ppu.ly);
 		if (!*has_window)
@@ -193,9 +193,9 @@ pixel_info get_object_pixel_info(size_t i)
 	u8 selected_x_pos = 0xFF;
 	for (size_t j = 0; j < 10; j++)
 	{
-		int sprite_screen_x_pos = ppu.scanline_objects[j].x_pos - 8;
-		int sprite_screen_y_pos = ppu.scanline_objects[j].y_pos - 16;
-		if (i >= sprite_screen_x_pos && i < sprite_screen_x_pos + 8)
+		int sprite_screen_x_pos = (int)(ppu.scanline_objects[j].x_pos) - 8;
+		int sprite_screen_y_pos = (int)(ppu.scanline_objects[j].y_pos) - 16;
+		if ((int)i >= sprite_screen_x_pos && (int)i < sprite_screen_x_pos + 8)
 		{
 			u8 object_attributes = ppu.scanline_objects[j].attributes;
 			tile t = tiles[ppu.scanline_objects[j].tile_index];
