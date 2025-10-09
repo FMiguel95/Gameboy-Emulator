@@ -21,6 +21,9 @@ int init_ppu()
 
 	ppu.object_attributes = (object_t*)memory.oam;
 
+	ppu.pixel_buffer_private = ppu.pixel_buffer1;
+	ppu.pixel_buffer_public = ppu.pixel_buffer2;
+
 	return 1;
 }
 
@@ -71,6 +74,11 @@ void ppu_tick()
 			// reset window stuff
 			ppu.window_line_counter = -1;
 			ppu.wy_equaled_ly = 0;
+
+			int* temp;
+			temp = ppu.pixel_buffer_private;
+			ppu.pixel_buffer_private = ppu.pixel_buffer_public;
+			ppu.pixel_buffer_public = temp;
 		}
 		else if (*ppu.ly == 154) // end of frame
 			*ppu.ly = 0;
@@ -118,13 +126,10 @@ int is_stat(u8 stat)
 void oam_scan()
 {
 	memset(ppu.scanline_objects, 0, sizeof(ppu.scanline_objects));
-	int sprite_mode = get_flag(*ppu.lcdc, LCDC_2);
-	u8 sprite_height = sprite_mode == 0 ? 8 : 16;
+	u8 sprite_height = get_flag(*ppu.lcdc, LCDC_2) ? 16 : 8;
 	int stored_count = 0;
 	for (size_t i = 0; i < 40; i++)
 	{
-		// if (*ppu.ly == 5)
-		// 	printf("obj %ld y_pos:%d x_pos:%d tile_index:%d attributes:%d\n", i, ppu.object_attributes[i].y_pos, ppu.object_attributes[i].x_pos, ppu.object_attributes[i].tile_index, ppu.object_attributes[i].attributes);
 		if (stored_count == 10)
 			break;
 		if (ppu.object_attributes[i].x_pos > 0 &&
@@ -134,11 +139,6 @@ void oam_scan()
 			ppu.scanline_objects[stored_count++] = ppu.object_attributes[i];
 		}
 	}
-	// if (*ppu.ly == 5)
-	// 	printf("...............................\n");
-	// if (stored_count > 0)
-	// 	printf("ly %d stored:%d\n", *ppu.ly, stored_count);
-
 }
 
 pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_window, size_t* x_pos)
@@ -155,6 +155,8 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 			*has_window = 1;
 			ppu.window_line_counter++;
 			*x_pos = 0;
+			if ((int)(*ppu.wx) - 7 < 0)
+				*x_pos = -((int)(*ppu.wx) - 7);
 		}
 		// get tile id
 		u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
@@ -184,13 +186,14 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 	return ret;
 }
 
-pixel_info get_object_pixel_info(size_t i)
+pixel_info get_object_pixel_info(size_t i, u8 object_size)
 {
 	pixel_info ret;
 	ret.color_code = LIGHTER_CODE;
 	ret.palette_index = LIGHTER_CODE;
 
 	u8 selected_x_pos = 0xFF;
+	u8 max_height_index = object_size ? 15 : 7;
 	for (size_t j = 0; j < 10; j++)
 	{
 		int sprite_screen_x_pos = (int)(ppu.scanline_objects[j].x_pos) - 8;
@@ -198,13 +201,23 @@ pixel_info get_object_pixel_info(size_t i)
 		if ((int)i >= sprite_screen_x_pos && (int)i < sprite_screen_x_pos + 8)
 		{
 			u8 object_attributes = ppu.scanline_objects[j].attributes;
-			tile t = tiles[ppu.scanline_objects[j].tile_index];
+
 			u8 x_pixel = i - sprite_screen_x_pos;
+			u8 y_pixel = *ppu.ly - sprite_screen_y_pos;
 			if (get_flag(object_attributes, 5))
 				x_pixel = 7 - x_pixel;
-			u8 y_pixel = *ppu.ly - sprite_screen_y_pos;
 			if (get_flag(object_attributes, 6))
-				y_pixel = 7 - y_pixel;
+				y_pixel = max_height_index - y_pixel;
+
+			u8 tile_index = ppu.scanline_objects[j].tile_index;
+			if (max_height_index == 15)
+			{
+				if (y_pixel < 8)
+					tile_index &= 0xFE;
+				// else
+				// 	tile_index |= 0x01;
+			}
+			tile t = tiles[tile_index];
 			
 			pixel_code palette_index = get_pixel_code(t, x_pixel, y_pixel);
 			if (palette_index == LIGHTER_CODE || selected_x_pos <= ppu.scanline_objects[j].x_pos)
@@ -236,7 +249,7 @@ void draw_scanline()
 
 	for (size_t i = 0; i < 160; i++)
 	{
-		pixel_info object_pixel_info = get_object_pixel_info(i);
+		pixel_info object_pixel_info = get_object_pixel_info(i, lcdc_flags.object_size);
 		pixel_info bg_win_pixel_info = get_bg_win_pixel_info(&lcdc_flags, i, &has_window, &x_pos);
 
 		pixel_code final_pixel_code = LIGHTER_CODE;
@@ -252,7 +265,7 @@ void draw_scanline()
 		else if (lcdc_flags.bg_window_enable) // just draw background if it's enabled
 			final_pixel_code = bg_win_pixel_info.color_code;
 
-		ppu.pixel_buffer[*ppu.ly * 160 + i] = get_color(final_pixel_code);
+		ppu.pixel_buffer_private[*ppu.ly * 160 + i] = get_color(final_pixel_code);
 		x_pos++;
 	}
 }

@@ -24,8 +24,9 @@ void write8(u16 address, u8 val)
 		memory.echo_ram[address - 0xE000] = val;
 	else if (address < 0xFEA0)
 	{
-		// u8 ppu_mode = read8(STAT) & 0b11;
-		// if (ppu_mode == 0 || ppu_mode == 1)
+		u8 ppu_mode = read8(STAT) & 0b11;
+		u8 lcdc = read8(LCDC);
+		if (ppu_mode == 0 || ppu_mode == 1 || get_flag(lcdc, 7) == 0)
 			memory.oam[address - 0xFE00] = val;
 	}
 	else if (address < 0xFF00)

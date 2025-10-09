@@ -28,7 +28,10 @@ typedef struct {
 	int window_line_counter;
 	int wy_equaled_ly;
 
-	int pixel_buffer[23040];	// 160 * 144
+	int pixel_buffer1[23040];	// 160 * 144
+	int pixel_buffer2[23040];
+	int* pixel_buffer_public;
+	int* pixel_buffer_private;
 } ppu_t;
 
 extern ppu_t ppu;

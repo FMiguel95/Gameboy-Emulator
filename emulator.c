@@ -178,7 +178,7 @@ void display_background(window_t* window, u16 start_address)
 
 void display_screen()
 {
-	emulator.window_screen.screen_surface->pixels = (int*)(&ppu.pixel_buffer);
+	emulator.window_screen.screen_surface->pixels = ppu.pixel_buffer_public;
 	render_window(&emulator.window_screen);
 }
 
