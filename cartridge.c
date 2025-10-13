@@ -125,6 +125,27 @@ mbc_t* new_mbc1()
 	return (mbc_t*)mbc;
 }
 
+mbc_t* new_mbc2()
+{
+	mbc2_t* mbc = malloc(sizeof(mbc2_t));
+
+	mbc->ram_enable = 0;
+	mbc->reg_ram_enable_rom_bank_number = 0;
+	cartridge.ram = calloc(0x200, sizeof(u8));
+	mbc->rom_bank_number_mask = 1;
+	for (size_t i = 0; i < cartridge.rom_size; i++)
+	{
+		mbc->rom_bank_number_mask <<= 1;
+		mbc->rom_bank_number_mask++;
+	}
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = 1;
+	mbc->selected_ram_bank = 0;
+	mbc->write_mbc = &write_mbc2;
+
+	return (mbc_t*)mbc;
+}
+
 // mbc_t* new_mbc3()
 // {
 // 	mbc1_t* mbc = malloc(sizeof(mbc3_t));
@@ -149,6 +170,12 @@ mbc_t* new_mbc1()
 
 void write_mbc0(u16 address, u8 val)
 {
+	if (address >= 0xA000 && address < 0xC000)
+	{
+		if (cartridge.mbc->ram_enable)
+			(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
+		return;
+	}
 	return;
 }
 
@@ -164,6 +191,12 @@ void write_mbc1(u16 address, u8 val)
 		mbc->reg_rom_ram_bank_number = val & 0b11;
 	else if (address < 0x8000) // ROM/RAM Mode Select
 		mbc->reg_rom_ram_mode_select = val & 1;
+	else if (address < 0xC000)
+	{
+		if (cartridge.mbc->ram_enable)
+			(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
+		return;
+	}
 
 	update_banks_mbc1();
 }
@@ -191,6 +224,34 @@ void update_banks_mbc1()
 	// printf("mode:%d reg_rom_bank_number:%d selected_rom2_bank:%d\n", mbc->reg_rom_ram_mode_select,mbc->reg_rom_bank_number, mbc->selected_rom2_bank);
 }
 
+void write_mbc2(u16 address, u8 val)
+{
+	mbc2_t* mbc = (mbc2_t*)cartridge.mbc;
+
+	if (address < 0x4000) // ROM Bank Number
+		mbc->reg_ram_enable_rom_bank_number = val;
+	else if (address < 0x8000) // unused bits
+		return;
+	else if (address >= 0xA000 && address < 0xC000) // normal ram write
+	{
+		if (mbc->ram_enable)
+			cartridge.ram[(address - 0xA000) & 0b111111111] = (val & 0b1111);
+		return;
+	}
+
+	int bit8 = (address >> 8) & 1;
+	
+	if (!bit8) // enable/disable RAM
+		mbc->ram_enable = (val & 0b1111) == 0xA;
+	else // select rom bank
+	{
+		mbc->selected_rom2_bank = (val & 0b1111);
+		if (mbc->selected_rom2_bank == 0)
+			mbc->selected_rom2_bank = 1;
+		mbc->selected_rom2_bank &= mbc->rom_bank_number_mask;
+	}
+}
+
 int init_mbc()
 {
 	if (cartridge.rom_size > 0x08)
@@ -199,9 +260,27 @@ int init_mbc()
 		return 0;
 	}
 
-	if (cartridge.cartridge_type == 0x00)
+	// if (cartridge.cartridge_type == 0x00)
+	// 	cartridge.mbc = no_mbc();
+	// else
+	// 	cartridge.mbc = new_mbc1();
+	switch (cartridge.cartridge_type)
+	{
+	case 0x00:	// ROM ONLY
 		cartridge.mbc = no_mbc();
-	else
+		break;
+	case 0x01:	// MBC1
+	case 0x02:	// MBC1+RAM
+	case 0x03:	// MBC1+RAM+BATTERY
 		cartridge.mbc = new_mbc1();
+		break;
+	case 0x05:	// MBC2
+	case 0x06:	// MBC2+BATTERY
+		cartridge.mbc = new_mbc2();
+		break;
+	default:
+		cartridge.mbc = new_mbc1();
+		break;
+	}
 	return 1;
 }

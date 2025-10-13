@@ -16,8 +16,8 @@ void write8(u16 address, u8 val)
 		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xA000)
 		memory.video_ram[address - 0x8000] = val;
-	else if (address < 0xC000 && cartridge.ram && cartridge.mbc->ram_enable)
-		(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
+	else if (address < 0xC000)
+		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xE000)
 		memory.work_ram[address - 0xC000] = val;
 	else if (address < 0xFE00)

@@ -37,8 +37,19 @@ typedef struct {
 mbc_t* new_mbc1();
 
 typedef struct {
+	u8 selected_rom1_bank;
+	u8 selected_rom2_bank;
+	u8 selected_ram_bank;
+	u8 rom_bank_number_mask;
+	int ram_enable;
+
+	void (*write_mbc)(u16, u8);
+
+	u8 reg_ram_enable_rom_bank_number;	// 8 bits
 
 } mbc2_t;
+
+mbc_t* new_mbc2();
 
 // typedef struct {
 // 	u8 selected_rom1_bank;
@@ -88,6 +99,8 @@ extern cartridge_t cartridge;
 void write_mbc0(u16 address, u8 val);
 
 void write_mbc1(u16 address, u8 val);
+
+void write_mbc2(u16 address, u8 val);
 
 void update_banks_mbc1();
 
