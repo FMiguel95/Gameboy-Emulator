@@ -146,27 +146,28 @@ mbc_t* new_mbc2()
 	return (mbc_t*)mbc;
 }
 
-// mbc_t* new_mbc3()
-// {
-// 	mbc1_t* mbc = malloc(sizeof(mbc3_t));
+mbc_t* new_mbc3()
+{
+	mbc3_t* mbc = malloc(sizeof(mbc3_t));
 
-// 	mbc->ram_enable = 0;
-// 	mbc->reg_rom_bank_number = 1;
-// 	mbc->reg_rom_ram_bank_number = 0;
-// 	mbc->reg_rom_ram_mode_select = 0;
-// 	mbc->rom_bank_number_mask = 1;
-// 	for (size_t i = 0; i < cartridge.rom_size; i++)
-// 	{
-// 		mbc->rom_bank_number_mask <<= 1;
-// 		mbc->rom_bank_number_mask++;
-// 	}
-// 	mbc->selected_rom1_bank = 0;
-// 	mbc->selected_rom2_bank = 1;
-// 	mbc->selected_ram_bank = 0;
-// 	mbc->write_mbc = &write_mbc3;
+	mbc->ram_enable = 0;
+	mbc->reg_rtc = 0;
+	mbc->reg_rom_bank_number = 1;
+	mbc->reg_ram_bank_number_rtc_register_select = 0;
+	mbc->reg_latch_clock_data = 0;
+	mbc->rom_bank_number_mask = 1;
+	for (size_t i = 0; i < cartridge.rom_size; i++)
+	{
+		mbc->rom_bank_number_mask <<= 1;
+		mbc->rom_bank_number_mask++;
+	}
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = 1;
+	mbc->selected_ram_bank = 0;
+	mbc->write_mbc = &write_mbc3;
 
-// 	return (mbc_t*)mbc;
-// }
+	return (mbc_t*)mbc;
+}
 
 void write_mbc0(u16 address, u8 val)
 {
@@ -220,8 +221,6 @@ void update_banks_mbc1()
 	mbc->selected_ram_bank = 0;
 	if (cartridge.ram_size > 0x02 && mbc->reg_rom_ram_mode_select == 1)
 		mbc->selected_ram_bank = mbc->reg_rom_ram_bank_number;
-
-	// printf("mode:%d reg_rom_bank_number:%d selected_rom2_bank:%d\n", mbc->reg_rom_ram_mode_select,mbc->reg_rom_bank_number, mbc->selected_rom2_bank);
 }
 
 void write_mbc2(u16 address, u8 val)
@@ -252,6 +251,45 @@ void write_mbc2(u16 address, u8 val)
 	}
 }
 
+void write_mbc3(u16 address, u8 val)
+{
+	mbc3_t* mbc = (mbc3_t*)cartridge.mbc;
+
+	if (address < 0x2000) // RAM and Timer Enable
+		mbc->ram_enable = (val & 0b1111) == 0xA;
+	else if (address < 0x4000) // ROM Bank Number
+		mbc->reg_rom_bank_number = val & 0b1111111;
+	else if (address < 0x6000) // RAM Bank Number - or - RTC Register Select
+		mbc->reg_ram_bank_number_rtc_register_select = val & 0b1111;
+	else if (address < 0x8000) // Latch Clock Data
+		mbc->reg_latch_clock_data = val;
+	else if (address < 0xC000)
+	{
+		if (cartridge.mbc->ram_enable)
+			(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
+		return;
+	}
+
+	update_banks_mbc3();
+}
+
+void update_banks_mbc3()
+{
+	mbc3_t* mbc = (mbc3_t*)cartridge.mbc;
+
+	// rom bank
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = mbc->reg_rom_bank_number;
+	if (mbc->selected_rom2_bank == 0)
+		mbc->selected_rom2_bank = 1;
+	mbc->selected_rom2_bank &= mbc->rom_bank_number_mask;
+
+	// ram bank
+	mbc->selected_ram_bank = 0;
+	if (cartridge.ram_size > 0x02)
+		mbc->selected_ram_bank = mbc->reg_ram_bank_number_rtc_register_select & 0b11;
+}
+
 int init_mbc()
 {
 	if (cartridge.rom_size > 0x08)
@@ -277,6 +315,13 @@ int init_mbc()
 	case 0x05:	// MBC2
 	case 0x06:	// MBC2+BATTERY
 		cartridge.mbc = new_mbc2();
+		break;
+	case 0x0F:	// MBC3+TIMER+BATTERY
+	case 0x10:	// MBC3+TIMER+RAM+BATTERY
+	case 0x11:	// MBC3
+	case 0x12:	// MBC3+RAM
+	case 0x13:	// MBC3+RAM+BATTERY
+		cartridge.mbc = new_mbc3();
 		break;
 	default:
 		cartridge.mbc = new_mbc1();

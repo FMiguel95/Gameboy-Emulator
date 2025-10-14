@@ -51,22 +51,23 @@ typedef struct {
 
 mbc_t* new_mbc2();
 
-// typedef struct {
-// 	u8 selected_rom1_bank;
-// 	u8 selected_rom2_bank;
-// 	u8 selected_ram_bank;
-// 	u8 rom_bank_number_mask;
-// 	int ram_enable;
+typedef struct {
+	u8 selected_rom1_bank;
+	u8 selected_rom2_bank;
+	u8 selected_ram_bank;
+	u8 rom_bank_number_mask;
+	int ram_enable;	// also timer enable
 
-// 	void (*write_mbc)(u16, u8);
+	void (*write_mbc)(u16, u8);
 
-// 	u8 reg_rom_bank_number;		// lower 5 bits
-// 	u8 reg_rom_ram_bank_number;	// 2 bits
-// 	u8 reg_rom_ram_mode_select;	// 1 bit
+	u8 reg_rtc;
+	u8 reg_rom_bank_number;
+	u8 reg_ram_bank_number_rtc_register_select;
+	u8 reg_latch_clock_data;
 
-// } mbc3_t;
+} mbc3_t;
 
-// mbc_t* new_mbc3();
+mbc_t* new_mbc3();
 
 typedef struct {
 
@@ -102,7 +103,11 @@ void write_mbc1(u16 address, u8 val);
 
 void write_mbc2(u16 address, u8 val);
 
+void write_mbc3(u16 address, u8 val);
+
 void update_banks_mbc1();
+
+void update_banks_mbc3();
 
 static const char* cartridge_types[0x100] = {
 	[0x00] = "ROM ONLY",
