@@ -109,17 +109,29 @@ ppu_mode ppu_get_mode()
 int is_stat(u8 stat)
 {
 	if (get_flag(stat, STAT_6) && get_flag(stat, STAT_2))
+	{
+		// printf("stat irq : ly==lyc\n");
 		return 1;
+	}
 	
 	if (get_flag(stat, STAT_3) && (stat & 0b11) == h_blank)
+	{
+		// printf("stat irq : h_blank\n");
 		return 1;
+	}
 
 	if (get_flag(stat, STAT_4) && (stat & 0b11) == v_blank)
+	{
+		// printf("stat irq : v_blank\n");
 		return 1;
+	}
 
 	if (get_flag(stat, STAT_5) && (stat & 0b11) == OAM_scan)
+	{
+		// printf("stat irq : oam_scan\n");
 		return 1;
-	
+	}
+	// printf("no stat irq\n");
 	return 0;
 }
 

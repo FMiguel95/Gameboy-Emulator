@@ -6,13 +6,13 @@ int init_joypad()
 {
 	joypad = (joypad_t){0};
 	joypad.joyp = memory.io_registers + 0x0;
-	*joypad.joyp = 0b00111111;
+	*joypad.joyp = 0b11111111;
 	return 1;
 }
 
 u8 read_joypad()
 {
-	u8 result = *joypad.joyp | 0b00001111;
+	u8 result = *joypad.joyp | 0b11001111;
 
 	// set_flag(&result, 7, 1);
 	// set_flag(&result, 6, 1);

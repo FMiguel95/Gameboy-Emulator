@@ -106,6 +106,8 @@ mbc_t* no_mbc()
 mbc_t* new_mbc1()
 {
 	mbc1_t* mbc = malloc(sizeof(mbc1_t));
+	if (cartridge.ram_size == 0x00)
+		cartridge.ram = calloc(0x2000, sizeof(u8));
 
 	mbc->ram_enable = 0;
 	mbc->reg_rom_bank_number = 1;

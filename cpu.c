@@ -80,6 +80,8 @@ void cpu_tick()
 			cpu.IME_set_request--;
 	}
 	cpu.instruction_to_execute();
+
+	*cpu.reg8_F &= 0b11110000;	// lower 4 bits of F can't be written
 }
 
 void interrupt_handler()
@@ -1503,8 +1505,6 @@ void POP_r16(u8* h, u8* l) // 3 2
 
 	case 2:
 		*l = read8(cpu.reg16_SP++);
-		if (l == cpu.reg8_F)
-			*cpu.reg8_F = (*cpu.reg8_F & 0b11110000);
 		break;
 
 	case 1:
@@ -1570,10 +1570,10 @@ void JP_n16() // 4 3
 	
 	case 2:
 		n |= (u16)read8(cpu.reg16_PC++) << 8;
+		cpu.reg16_PC = n;
 		break;
 
 	case 1:
-		cpu.reg16_PC = n;
 		break;
 	}
 	cpu.instruction_cycles_remain--;
@@ -1717,19 +1717,19 @@ void CALL_ccn16(condition cc) // 6 3
 
 	case 4:
 		address |= ((u16)read8(cpu.reg16_PC++) << 8);
-		if (!check_condition(cc))
-			cpu.instruction_cycles_remain = 1;
 		break;
-
+		
 	case 3:
+	if (!check_condition(cc))
+		cpu.instruction_cycles_remain = 1;
+		break;
+	
+	case 2:
 		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC >> 8));
 		break;
-
-	case 2:
-		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
-		break;
-
+	
 	case 1:
+		write8(--cpu.reg16_SP, (u8)(cpu.reg16_PC & 0x00FF));
 		cpu.reg16_PC = address;
 		break;
 	}
@@ -2027,10 +2027,10 @@ void BIT_u3HL(u8 bit) // 3 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 2:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 1:
+		val = read8(cpu.reg16_HL);
 		set_flag(cpu.reg8_F, flag_z, ((val >> bit) & 1) == 0);
 		set_flag(cpu.reg8_F, flag_n, 0);
 		set_flag(cpu.reg8_F, flag_h, 1);
@@ -2118,10 +2118,10 @@ void RES_u3HL(u8 bit) // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 mask = 1 << bit;
 		val= val & ~mask;
 		break;
@@ -2212,10 +2212,10 @@ void SET_u3HL(u8 bit) // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 mask = 1 << bit;
 		val = val | mask;
 		break;
@@ -2261,10 +2261,10 @@ void RL_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit7 = (val & 0b10000000) >> 7;
 		val = (val << 1) | get_flag(*cpu.reg8_F, flag_c);
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2307,10 +2307,10 @@ void RR_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit0 = val & 0b00000001;
 		val = (get_flag(*cpu.reg8_F, flag_c) << 7) | (val >> 1);
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2353,10 +2353,10 @@ void RLC_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit7 = (val & 0b10000000) >> 7;
 		val = (val << 1) | bit7;
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2399,10 +2399,10 @@ void RRC_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit0 = val & 0b00000001;
 		val = (bit0 << 7) | (val >> 1);
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2445,10 +2445,10 @@ void SLA_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit7 = (val & 0b10000000) >> 7;
 		val = val << 1;
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2491,10 +2491,10 @@ void SRA_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit0 = val & 0b00000001;
 		val = (val & 0b10000000) | val >> 1;
 		set_flag(cpu.reg8_F, flag_z, val == 0);
@@ -2537,10 +2537,10 @@ void SRL_HL() // 4 2
 	switch (cpu.instruction_cycles_remain)
 	{
 	case 3:
-		val = read8(cpu.reg16_HL);
 		break;
-
+	
 	case 2:
+		val = read8(cpu.reg16_HL);
 		u8 bit0 = val & 0b00000001;
 		val = val >> 1;
 		set_flag(cpu.reg8_F, flag_z, val == 0);
