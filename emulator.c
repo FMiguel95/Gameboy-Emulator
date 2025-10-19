@@ -11,14 +11,59 @@ int init_app()
 		return 0;
 	}
 
-	init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	// init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	// init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	// init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 
 	emulator.paused = 0;
 	emulator.quit = 0;
 
+	return 1;
+}
+
+int load_sram()
+{
+	if (!cartridge.battery)
+		return 1;
+
+	int rom_file_name_len = strlen(emulator.rom_file_name);
+	strncpy(emulator.save_file_path, "./saves/", 8);
+	strncpy(emulator.save_file_path + 8, emulator.rom_file_name, rom_file_name_len);
+	strncpy(emulator.save_file_path + 8 + rom_file_name_len, ".sram", 6);
+	FILE* file = fopen(emulator.save_file_path, "rb");
+	if (!file && errno != ENOENT)
+	{
+		perror(emulator.save_file_path);
+		return 0;
+	}
+
+	if (file)
+	{
+		int size = 0;
+		switch (cartridge.ram_size)
+		{
+		case 0x00:
+			size = 0x2000;
+			break;
+		case 0x02:
+			size = 0x2000;
+			break;
+		case 0x03:
+			size = 0x8000;
+			break;
+		case 0x04:
+			size = 0x20000;
+			break;
+		case 0x05:
+			size = 0x10000;
+			break;
+		}
+		fread(cartridge.ram, 1, size, file);
+		fclose(file);
+	}
+	else
+		printf("%s: file not found\n", emulator.save_file_path);
 	return 1;
 }
 
@@ -64,14 +109,45 @@ void render_window(window_t* window)
 
 void close_app()
 {
-	SDL_DestroyRenderer(emulator.window_tiles.renderer);
-	SDL_DestroyWindow(emulator.window_tiles.window);
+	if (cartridge.battery)	// dump external ram to save file
+	{
+		int fd = open(emulator.save_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+		if (fd != -1)
+		{
+			int size = 0;
+			switch (cartridge.ram_size)
+			{
+			case 0x00:
+				size = 0x2000;
+				break;
+			case 0x02:
+				size = 0x2000;
+				break;
+			case 0x03:
+				size = 0x8000;
+				break;
+			case 0x04:
+				size = 0x20000;
+				break;
+			case 0x05:
+				size = 0x10000;
+				break;
+			}
+			write(fd, cartridge.ram, size);
+			close(fd);
+		}
+		else
+			perror(emulator.save_file_path);
+	}
 
-	SDL_DestroyRenderer(emulator.window_background9800.renderer);
-	SDL_DestroyWindow(emulator.window_background9800.window);
+	// SDL_DestroyRenderer(emulator.window_tiles.renderer);
+	// SDL_DestroyWindow(emulator.window_tiles.window);
 
-	SDL_DestroyRenderer(emulator.window_background9C00.renderer);
-	SDL_DestroyWindow(emulator.window_background9C00.window);
+	// SDL_DestroyRenderer(emulator.window_background9800.renderer);
+	// SDL_DestroyWindow(emulator.window_background9800.window);
+
+	// SDL_DestroyRenderer(emulator.window_background9C00.renderer);
+	// SDL_DestroyWindow(emulator.window_background9C00.window);
 
 	SDL_DestroyRenderer(emulator.window_screen.renderer);
 	SDL_DestroyWindow(emulator.window_screen.window);
@@ -98,19 +174,18 @@ int run_emulator()
 		}
 
 		display_screen();
-		display_vram();
-		display_background(&emulator.window_background9800, 0x1800);
-		display_background(&emulator.window_background9C00, 0x1C00);
+		// display_vram();
+		// display_background(&emulator.window_background9800, 0x1800);
+		// display_background(&emulator.window_background9C00, 0x1C00);
 
-		if (!emulator.fforward)
-		{
-			long end_time = get_current_time();
-			long sleep_time = start_time + FRAME_TIME - end_time;
-			if (sleep_time > 0)
-				usleep(sleep_time);
-			// printf("%ld\n", end_time - start_time);
-		}
-		//printf("%d %d %d %d %d %d %d %d\n", joypad.keys_pressed[0], joypad.keys_pressed[1], joypad.keys_pressed[2], joypad.keys_pressed[3], joypad.keys_pressed[4], joypad.keys_pressed[5], joypad.keys_pressed[6], joypad.keys_pressed[7]);
+		if (emulator.fforward)
+			continue;
+
+		long end_time = get_current_time();
+		long sleep_time = start_time + FRAME_TIME - end_time;
+		if (sleep_time > 0)
+			usleep(sleep_time);
+		// printf("%ld\n", end_time - start_time);
 	}
 	return 0;
 }
@@ -212,6 +287,8 @@ void handle_events()
 
 			if (event.key.keysym.sym == SDLK_SPACE)
 				emulator.fforward = 1;
+			if (event.key.keysym.sym == SDLK_p)
+				emulator.paused = !emulator.paused;
 		}
 		// on key up
 		if (event.type == SDL_KEYUP)

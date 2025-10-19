@@ -3,7 +3,10 @@
 
 # include <time.h>
 # include <unistd.h>
+# include <fcntl.h>
 # include <SDL2/SDL.h>
+# include <libgen.h>
+# include <errno.h>
 # include "cartridge.h"
 # include "memory.h"
 # include "tile.h"
@@ -25,6 +28,8 @@ typedef struct
 	int paused;
 	int quit;
 	int fforward;
+	char* rom_file_name;
+	char save_file_path[1024];
 
 	window_t window_screen;
 	window_t window_tiles;
@@ -45,6 +50,8 @@ extern emulator_t emulator;
 # define WIN_SCREEN_SIZE_Y 144
 
 int init_app();
+
+int load_sram();
 
 int init_window(window_t* window, char* title, int size_x, int size_y);
 

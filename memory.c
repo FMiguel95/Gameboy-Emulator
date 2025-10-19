@@ -16,9 +16,9 @@ void write8(u16 address, u8 val)
 		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xA000)
 	{
-		u8 ppu_mode = read8(STAT) & 0b11;
-		u8 lcdc = read8(LCDC);
-		if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
+		// u8 ppu_mode = read8(STAT) & 0b11;
+		// u8 lcdc = read8(LCDC);
+		// if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
 			memory.video_ram[address - 0x8000] = val;
 	}
 	else if (address < 0xC000)
@@ -92,12 +92,12 @@ u8 read8(u16 address)
 		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom2_bank)[address - 0x4000];
 	else if (address < 0xA000)
 	{
-		u8 ppu_mode = read8(STAT) & 0b11;
-		u8 lcdc = read8(LCDC);
-		if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
+		// u8 ppu_mode = read8(STAT) & 0b11;
+		// u8 lcdc = read8(LCDC);
+		// if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
 			return memory.video_ram[address - 0x8000];
-		else
-			return 0xFF;
+		// else
+		// 	return 0xFF;
 	}
 	else if (address < 0xC000)
 	{
@@ -190,24 +190,9 @@ void set_flag(u8* byte, u8 bit, u8 val)
 
 int init_memory()
 {
-	// if (cartridge.cartridge_type != 0x00)
-	// {
-	// 	printf("Unsupported cartridge type: %s\n", cartridge_types[cartridge.cartridge_type]);
-	// 	return 0;
-	// }
-	// if (cartridge.rom_size != 0x00)
-	// {
-	// 	printf("Unsupported ROM size: %s\n", rom_sizes[cartridge.rom_size]);
-	// 	return 0;
-	// }
-
 	memory = (memory_t){0};
-	// memcpy(memory.rom_bank0, cartridge.rom, 0x4000);
-	// memcpy(memory.rom_bank1, cartridge.rom + 0x4000, 0x4000);
 	memory.rom_bank0 = cartridge.rom;
 	memory.rom_bank1 = cartridge.rom + 0x4000;
-
-	// write8(LY, 0x90);
 
 	return 1;
 }

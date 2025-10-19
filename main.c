@@ -14,6 +14,9 @@ int main(int ac, char** av)
 		return 1;
 	if (!init_memory())
 		return 1;
+	emulator.rom_file_name = basename(av[1]);
+	if (!load_sram())
+		return 1;
 	if (!init_tiles())
 		return 1;
 	if (!init_joypad())
@@ -31,6 +34,7 @@ int main(int ac, char** av)
 	}
 
 	run_emulator();
+	close_app();
 
 	return 0;
 }

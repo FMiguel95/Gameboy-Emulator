@@ -72,6 +72,22 @@ int read_rom(const char* path)
 		break;
 	}
 
+	switch (cartridge.cartridge_type)
+	{
+	case 0x03:	// MBC1+RAM+BATTERY
+	case 0x06:	// MBC2+BATTERY
+	case 0x09:	// ROM+RAM+BATTERY
+	case 0x0D:	// MMM01+RAM+BATTERY
+	case 0x0F:	// MBC3+TIMER+BATTERY
+	case 0x10:	// MBC3+TIMER+RAM+BATTERY
+	case 0x13:	// MBC3+RAM+BATTERY
+	case 0x1B:	// MBC5+RAM+BATTERY
+	case 0x1E:	// MBC5+RUMBLE+RAM+BATTERY
+	case 0x22:	// MBC7+SENSOR+RUMBLE+RAM+BATTERY
+	case 0xFF:	// HuC1+RAM+BATTERY
+		cartridge.battery = 1;
+	}
+
 	printf("title: %.16s\n", cartridge.title);
 	// printf("manufactor_code: %s\n", cartridge.manufactor_code);
 	// printf("cgb_flag: %u\n", cartridge.cgb_flag);
@@ -300,10 +316,6 @@ int init_mbc()
 		return 0;
 	}
 
-	// if (cartridge.cartridge_type == 0x00)
-	// 	cartridge.mbc = no_mbc();
-	// else
-	// 	cartridge.mbc = new_mbc1();
 	switch (cartridge.cartridge_type)
 	{
 	case 0x00:	// ROM ONLY

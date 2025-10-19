@@ -77,6 +77,7 @@ typedef struct {
 	u8* rom;
 	u8* ram;
 	mbc_t* mbc;
+	int battery;
 
 	// entry point				// 0100 - 0103
 	u8 nintendo_logo[48];		// 0104 - 0133
