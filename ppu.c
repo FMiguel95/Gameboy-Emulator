@@ -32,8 +32,10 @@ void ppu_tick()
 	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
 	{
 		*ppu.ly = 0;
-		ppu.scanline_cycle = 0;
-		ppu_set_mode(v_blank);
+		ppu.scanline_cycle = -1;
+		ppu_set_mode(0);
+		ppu.window_line_counter = -1;
+		ppu.wy_equaled_ly = 0;
 		return;
 	}
 
