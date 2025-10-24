@@ -27,6 +27,7 @@ typedef struct {
 	int scanline_cycle;
 	int window_line_counter;
 	int wy_equaled_ly;
+	int line_153_glitch;
 
 	int pixel_buffer1[23040];	// 160 * 144
 	int pixel_buffer2[23040];

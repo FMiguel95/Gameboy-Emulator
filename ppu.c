@@ -36,17 +36,23 @@ void ppu_tick()
 		ppu_set_mode(0);
 		ppu.window_line_counter = -1;
 		ppu.wy_equaled_ly = 0;
+		ppu.line_153_glitch = 0;
 		return;
 	}
 
 	static int prev_stat_state;
 
 	ppu.scanline_cycle++;
+	if (*ppu.ly == 153 && ppu.scanline_cycle == 2)	// ly 153 will show as 0 for most of the line
+	{
+		*ppu.ly = 0;
+		ppu.line_153_glitch = 1;
+	}
 
 	if (*ppu.wy == *ppu.ly)
 		ppu.wy_equaled_ly = 1;
 
-	if (*ppu.ly < 144)
+	if (*ppu.ly < 144 && !ppu.line_153_glitch)
 	{
 		if (ppu.scanline_cycle == 0)
 		{
@@ -65,7 +71,9 @@ void ppu_tick()
 	if (ppu.scanline_cycle == 114) // end of scanline
 	{
 		ppu.scanline_cycle = -1;
-		(*ppu.ly)++;
+		if (!ppu.line_153_glitch)
+			(*ppu.ly)++;
+		ppu.line_153_glitch = 0;
 		if (*ppu.ly == 144)
 		{
 			ppu_set_mode(v_blank);
@@ -82,8 +90,8 @@ void ppu_tick()
 			ppu.pixel_buffer_private = ppu.pixel_buffer_public;
 			ppu.pixel_buffer_public = temp;
 		}
-		else if (*ppu.ly == 154) // end of frame
-			*ppu.ly = 0;
+		// else if (*ppu.ly == 154) // end of frame
+		// 	*ppu.ly = 0;
 	}
 
 	set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
