@@ -1717,11 +1717,11 @@ void CALL_ccn16(condition cc) // 6 3
 
 	case 4:
 		address |= ((u16)read8(cpu.reg16_PC++) << 8);
+		if (!check_condition(cc))
+			cpu.instruction_cycles_remain = 1;
 		break;
-		
+	
 	case 3:
-	if (!check_condition(cc))
-		cpu.instruction_cycles_remain = 1;
 		break;
 	
 	case 2:
