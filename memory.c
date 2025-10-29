@@ -7,7 +7,10 @@ void write8(u16 address, u8 val)
 		return oam_dma_transfer(val);
 
 	if (address == DIV)	// writing any value to DIV resets it to $00
+	{
 		val = 0;
+		timers.div_counter = 0;
+	}
 
 	if (address == JOYP)
 		return write_joypad(val);
