@@ -187,6 +187,27 @@ mbc_t* new_mbc3()
 	return (mbc_t*)mbc;
 }
 
+mbc_t* new_mbc5()
+{
+	mbc5_t* mbc = malloc(sizeof(mbc5_t));
+
+	mbc->ram_enable = 0;
+	mbc->reg_rom_bank_number = 1;
+	mbc->reg_rom_bank_number2 = 0;
+	mbc->rom_bank_number_mask = 1;
+	for (size_t i = 0; i < cartridge.rom_size; i++)
+	{
+		mbc->rom_bank_number_mask <<= 1;
+		mbc->rom_bank_number_mask++;
+	}
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = 1;
+	mbc->selected_ram_bank = 0;
+	mbc->write_mbc = &write_mbc5;
+
+	return (mbc_t*)mbc;
+}
+
 void write_mbc0(u16 address, u8 val)
 {
 	if (address >= 0xA000 && address < 0xC000)
@@ -308,6 +329,42 @@ void update_banks_mbc3()
 		mbc->selected_ram_bank = mbc->reg_ram_bank_number_rtc_register_select & 0b11;
 }
 
+void write_mbc5(u16 address, u8 val)
+{
+	mbc5_t* mbc = (mbc5_t*)cartridge.mbc;
+
+	if (address < 0x2000) // RAM Enable
+		mbc->ram_enable = (val & 0b1111) == 0xA;
+	else if (address < 0x3000) // ROM Bank Number 8 bits
+		mbc->reg_rom_bank_number = val;
+	else if (address < 0x4000) // ROM Bank Number 1 bit
+		mbc->reg_rom_bank_number2 = val & 1;
+	else if (address < 0x6000) // RAM Bank Number
+		mbc->reg_ram_bank_number = val & 0b1111;
+	else if (address >= 0xA000 && address < 0xC000) // normal ram write
+	{
+		if (cartridge.mbc->ram_enable)
+			(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
+		return;
+	}
+
+	update_banks_mbc5();
+}
+
+void update_banks_mbc5()
+{
+	mbc5_t* mbc = (mbc5_t*)cartridge.mbc;
+
+	// rom bank
+	mbc->selected_rom1_bank = 0;
+	mbc->selected_rom2_bank = ((mbc->reg_rom_bank_number2 << 8) | mbc->reg_rom_bank_number) & mbc->rom_bank_number_mask;
+
+	// ram bank
+	mbc->selected_ram_bank = 0;
+	if (cartridge.ram_size > 0x02)
+		mbc->selected_ram_bank = mbc->reg_ram_bank_number & 0b11;
+}
+
 int init_mbc()
 {
 	if (cartridge.rom_size > 0x08)
@@ -337,8 +394,16 @@ int init_mbc()
 	case 0x13:	// MBC3+RAM+BATTERY
 		cartridge.mbc = new_mbc3();
 		break;
+	case 0x19:	// MBC5
+	case 0x1A:	// MBC5+RAM
+	case 0x1B:	// MBC5+RAM+BATTERY
+	case 0x1C:	// MBC5+RUMBLE
+	case 0x1D:	// MBC5+RUMBLE+RAM
+	case 0x1E:	// MBC5+RUMBLE+RAM+BATTERY
+		cartridge.mbc = new_mbc5();
+		break;
 	default:
-		cartridge.mbc = new_mbc1();
+		cartridge.mbc = new_mbc5();
 		break;
 	}
 	return 1;

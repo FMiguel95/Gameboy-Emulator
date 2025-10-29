@@ -8,10 +8,10 @@
 # include <string.h>
 
 typedef struct {
-	u8 selected_rom1_bank;
-	u8 selected_rom2_bank;
-	u8 selected_ram_bank;
-	u8 rom_bank_number_mask;
+	int selected_rom1_bank;
+	int selected_rom2_bank;
+	int selected_ram_bank;
+	int rom_bank_number_mask;
 	int ram_enable;
 
 	void (*write_mbc)(u16, u8);
@@ -20,10 +20,10 @@ typedef struct {
 mbc_t* no_mbc();
 
 typedef struct {
-	u8 selected_rom1_bank;
-	u8 selected_rom2_bank;
-	u8 selected_ram_bank;
-	u8 rom_bank_number_mask;
+	int selected_rom1_bank;
+	int selected_rom2_bank;
+	int selected_ram_bank;
+	int rom_bank_number_mask;
 	int ram_enable;
 
 	void (*write_mbc)(u16, u8);
@@ -37,10 +37,10 @@ typedef struct {
 mbc_t* new_mbc1();
 
 typedef struct {
-	u8 selected_rom1_bank;
-	u8 selected_rom2_bank;
-	u8 selected_ram_bank;
-	u8 rom_bank_number_mask;
+	int selected_rom1_bank;
+	int selected_rom2_bank;
+	int selected_ram_bank;
+	int rom_bank_number_mask;
 	int ram_enable;
 
 	void (*write_mbc)(u16, u8);
@@ -52,10 +52,10 @@ typedef struct {
 mbc_t* new_mbc2();
 
 typedef struct {
-	u8 selected_rom1_bank;
-	u8 selected_rom2_bank;
-	u8 selected_ram_bank;
-	u8 rom_bank_number_mask;
+	int selected_rom1_bank;
+	int selected_rom2_bank;
+	int selected_ram_bank;
+	int rom_bank_number_mask;
 	int ram_enable;	// also timer enable
 
 	void (*write_mbc)(u16, u8);
@@ -70,8 +70,21 @@ typedef struct {
 mbc_t* new_mbc3();
 
 typedef struct {
+	int selected_rom1_bank;
+	int selected_rom2_bank;
+	int selected_ram_bank;
+	int rom_bank_number_mask;
+	int ram_enable;
+
+	void (*write_mbc)(u16, u8);
+
+	u8 reg_rom_bank_number;		// 8 bits
+	u8 reg_rom_bank_number2;	// 1 bit
+	u8 reg_ram_bank_number;
 
 } mbc5_t;
+
+mbc_t* new_mbc5();
 
 typedef struct {
 	u8* rom;
@@ -106,9 +119,13 @@ void write_mbc2(u16 address, u8 val);
 
 void write_mbc3(u16 address, u8 val);
 
+void write_mbc5(u16 address, u8 val);
+
 void update_banks_mbc1();
 
 void update_banks_mbc3();
+
+void update_banks_mbc5();
 
 static const char* cartridge_types[0x100] = {
 	[0x00] = "ROM ONLY",
