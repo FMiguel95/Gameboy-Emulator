@@ -3,10 +3,37 @@
 #include "./imgui/imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
+#include "emulator.h"
 
 
-int main()
+int main(int ac, char** av)
 {
+	if (ac <= 1)
+	{
+		printf("Usage: ./emu <rom_path>\n");
+		return 1;
+	}
+
+	if (!read_rom(av[1]))
+		return 1;
+	if (!init_mbc())
+		return 1;
+	if (!init_memory())
+		return 1;
+	emulator.rom_file_name = basename(av[1]);
+	if (!load_sram())
+		return 1;
+	if (!init_tiles())
+		return 1;
+	if (!init_joypad())
+		return 1;
+	if (!init_timers())
+		return 1;
+	if (!init_cpu())
+		return 1;
+	if (!init_ppu())
+		return 1;
+
 	// Setup SDL
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
 	{
@@ -68,10 +95,28 @@ int main()
 				done = true;
 		}
 
+		// emulator
+		process_frame();
+		usleep(16666);
+
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer3_NewFrame();
 		ImGui_ImplSDL3_NewFrame();
 		ImGui::NewFrame();
+
+		ImGui::Begin("CPU");
+		ImGui::InputInt("A", (int*)cpu.reg8_A);
+		ImGui::InputInt("B", (int*)cpu.reg8_B);
+		ImGui::InputInt("C", (int*)cpu.reg8_C);
+		ImGui::InputInt("D", (int*)cpu.reg8_D);
+		ImGui::InputInt("E", (int*)cpu.reg8_E);
+		ImGui::InputInt("F", (int*)cpu.reg8_F);
+		ImGui::InputInt("H", (int*)cpu.reg8_H);
+		ImGui::InputInt("L", (int*)cpu.reg8_L);
+		ImGui::InputInt("SP", (int*)&cpu.reg16_SP);
+		ImGui::InputInt("PC", (int*)&cpu.reg16_PC);
+		ImGui::End();
+		
 
 		if (ImGui::BeginMainMenuBar())
 		{

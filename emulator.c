@@ -1,71 +1,71 @@
-// #include "emulator.h"
+#include "emulator.h"
 
-// emulator_t emulator;
+emulator_t emulator;
 
-// int init_app()
-// {
-// 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
-// 	{
-// 		printf("SDL initialization failed: %s\n", SDL_GetError());
-// 		SDL_Quit();
-// 		return 0;
-// 	}
+int init_app()
+{
+	// if (SDL_Init(SDL_INIT_VIDEO) != 0)
+	// {
+	// 	printf("SDL initialization failed: %s\n", SDL_GetError());
+	// 	SDL_Quit();
+	// 	return 0;
+	// }
 
-// 	// init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-// 	// init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-// 	// init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
-// 	init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	// // init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	// // init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	// // init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	// init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 
-// 	emulator.paused = 0;
-// 	emulator.quit = 0;
+	emulator.paused = 0;
+	emulator.quit = 0;
 
-// 	return 1;
-// }
+	return 1;
+}
 
-// int load_sram()
-// {
-// 	if (!cartridge.battery)
-// 		return 1;
+int load_sram()
+{
+	if (!cartridge.battery)
+		return 1;
 
-// 	int rom_file_name_len = strlen(emulator.rom_file_name);
-// 	strncpy(emulator.save_file_path, "./saves/", 8);
-// 	strncpy(emulator.save_file_path + 8, emulator.rom_file_name, rom_file_name_len);
-// 	strncpy(emulator.save_file_path + 8 + rom_file_name_len, ".sram", 6);
-// 	FILE* file = fopen(emulator.save_file_path, "rb");
-// 	if (!file && errno != ENOENT)
-// 	{
-// 		perror(emulator.save_file_path);
-// 		return 0;
-// 	}
+	int rom_file_name_len = strlen(emulator.rom_file_name);
+	strncpy(emulator.save_file_path, "./saves/", 8);
+	strncpy(emulator.save_file_path + 8, emulator.rom_file_name, rom_file_name_len);
+	strncpy(emulator.save_file_path + 8 + rom_file_name_len, ".sram", 6);
+	FILE* file = fopen(emulator.save_file_path, "rb");
+	if (!file && errno != ENOENT)
+	{
+		perror(emulator.save_file_path);
+		return 0;
+	}
 
-// 	if (file)
-// 	{
-// 		int size = 0;
-// 		switch (cartridge.ram_size)
-// 		{
-// 		case 0x00:
-// 			size = 0x2000;
-// 			break;
-// 		case 0x02:
-// 			size = 0x2000;
-// 			break;
-// 		case 0x03:
-// 			size = 0x8000;
-// 			break;
-// 		case 0x04:
-// 			size = 0x20000;
-// 			break;
-// 		case 0x05:
-// 			size = 0x10000;
-// 			break;
-// 		}
-// 		fread(cartridge.ram, 1, size, file);
-// 		fclose(file);
-// 	}
-// 	else
-// 		printf("%s: file not found\n", emulator.save_file_path);
-// 	return 1;
-// }
+	if (file)
+	{
+		int size = 0;
+		switch (cartridge.ram_size)
+		{
+		case 0x00:
+			size = 0x2000;
+			break;
+		case 0x02:
+			size = 0x2000;
+			break;
+		case 0x03:
+			size = 0x8000;
+			break;
+		case 0x04:
+			size = 0x20000;
+			break;
+		case 0x05:
+			size = 0x10000;
+			break;
+		}
+		fread(cartridge.ram, 1, size, file);
+		fclose(file);
+	}
+	else
+		printf("%s: file not found\n", emulator.save_file_path);
+	return 1;
+}
 
 // int init_window(window_t* window, char* title, int size_x, int size_y)
 // {
@@ -107,95 +107,98 @@
 // 	SDL_RenderPresent(window->renderer);
 // }
 
-// void close_app()
-// {
-// 	if (cartridge.battery)	// dump external ram to save file
-// 	{
-// 		int fd = open(emulator.save_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-// 		if (fd != -1)
-// 		{
-// 			int size = 0;
-// 			switch (cartridge.ram_size)
-// 			{
-// 			case 0x00:
-// 				size = 0x2000;
-// 				break;
-// 			case 0x02:
-// 				size = 0x2000;
-// 				break;
-// 			case 0x03:
-// 				size = 0x8000;
-// 				break;
-// 			case 0x04:
-// 				size = 0x20000;
-// 				break;
-// 			case 0x05:
-// 				size = 0x10000;
-// 				break;
-// 			}
-// 			write(fd, cartridge.ram, size);
-// 			close(fd);
-// 		}
-// 		else
-// 			perror(emulator.save_file_path);
-// 	}
+void close_app()
+{
+	if (cartridge.battery)	// dump external ram to save file
+	{
+		int fd = open(emulator.save_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+		if (fd != -1)
+		{
+			int size = 0;
+			switch (cartridge.ram_size)
+			{
+			case 0x00:
+				size = 0x2000;
+				break;
+			case 0x02:
+				size = 0x2000;
+				break;
+			case 0x03:
+				size = 0x8000;
+				break;
+			case 0x04:
+				size = 0x20000;
+				break;
+			case 0x05:
+				size = 0x10000;
+				break;
+			}
+			write(fd, cartridge.ram, size);
+			close(fd);
+		}
+		else
+			perror(emulator.save_file_path);
+	}
 
-// 	// SDL_DestroyRenderer(emulator.window_tiles.renderer);
-// 	// SDL_DestroyWindow(emulator.window_tiles.window);
+	// SDL_DestroyRenderer(emulator.window_tiles.renderer);
+	// SDL_DestroyWindow(emulator.window_tiles.window);
 
-// 	// SDL_DestroyRenderer(emulator.window_background9800.renderer);
-// 	// SDL_DestroyWindow(emulator.window_background9800.window);
+	// SDL_DestroyRenderer(emulator.window_background9800.renderer);
+	// SDL_DestroyWindow(emulator.window_background9800.window);
 
-// 	// SDL_DestroyRenderer(emulator.window_background9C00.renderer);
-// 	// SDL_DestroyWindow(emulator.window_background9C00.window);
+	// SDL_DestroyRenderer(emulator.window_background9C00.renderer);
+	// SDL_DestroyWindow(emulator.window_background9C00.window);
 
-// 	SDL_DestroyRenderer(emulator.window_screen.renderer);
-// 	SDL_DestroyWindow(emulator.window_screen.window);
+	// SDL_DestroyRenderer(emulator.window_screen.renderer);
+	// SDL_DestroyWindow(emulator.window_screen.window);
 
-// 	SDL_Quit();
-// }
+	// SDL_Quit();
+}
 
-// int run_emulator()
-// {
-// 	while (!emulator.quit)
-// 	{
-// 		long start_time = get_current_time();
+int run_emulator()
+{
+	while (!emulator.quit)
+	{
+		long start_time = get_current_time();
 
-// 		handle_events();
+		// handle_events();
 
-// 		if (!emulator.paused)
-// 		{
-// 			for (size_t i = 0; i < FRAME_CYCLES; i++)
-// 			{
-// 				timers_tick();
-// 				cpu_tick();
-// 				ppu_tick();
-// 			}
-// 		}
+		if (!emulator.paused)
+			process_frame();
 
-// 		display_screen();
-// 		// display_vram();
-// 		// display_background(&emulator.window_background9800, 0x1800);
-// 		// display_background(&emulator.window_background9C00, 0x1C00);
+		// display_screen();
+		// display_vram();
+		// display_background(&emulator.window_background9800, 0x1800);
+		// display_background(&emulator.window_background9C00, 0x1C00);
 
-// 		if (emulator.fforward)
-// 			continue;
+		if (emulator.fforward)
+			continue;
 
-// 		long end_time = get_current_time();
-// 		long sleep_time = start_time + FRAME_TIME - end_time;
-// 		if (sleep_time > 0)
-// 			usleep(sleep_time);
-// 		// printf("%ld\n", end_time - start_time);
-// 	}
-// 	return 0;
-// }
+		long end_time = get_current_time();
+		long sleep_time = start_time + FRAME_TIME - end_time;
+		if (sleep_time > 0)
+			usleep(sleep_time);
+		// printf("%ld\n", end_time - start_time);
+	}
+	return 0;
+}
 
-// long get_current_time()
-// {
-// 	struct timespec ts;
-// 	clock_gettime(1, &ts);
-// 	return ts.tv_sec * 1000000l + ts.tv_nsec / 1000l;
-// }
+void process_frame()
+{
+	for (size_t i = 0; i < FRAME_CYCLES; i++)
+	{
+		timers_tick();
+		cpu_tick();
+		ppu_tick();
+	}
+}
+
+long get_current_time()
+{
+	struct timespec ts;
+	clock_gettime(1, &ts);
+	return ts.tv_sec * 1000000l + ts.tv_nsec / 1000l;
+}
 
 // void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels)
 // {

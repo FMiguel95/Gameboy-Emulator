@@ -6,6 +6,10 @@
 # include "timers.h"
 # include "joypad.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 # define JOYP	0xFF00 // Joypad	Mixed
 # define SB		0xFF01 // Serial transfer data	R/W
 # define SC		0xFF02 // Serial transfer control	R/W
@@ -106,5 +110,9 @@ static u8 boot_rom[0x100] = {
 };
 
 int init_memory();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

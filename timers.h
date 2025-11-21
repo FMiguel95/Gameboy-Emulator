@@ -4,6 +4,10 @@
 # include "types.h"
 # include "memory.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u8* div;	// Divider register
 	u16 div_counter;
@@ -23,5 +27,9 @@ extern timers_t timers;
 int init_timers();
 
 void timers_tick();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

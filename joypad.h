@@ -4,6 +4,9 @@
 # include "types.h"
 # include "memory.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum e_Key
 {
@@ -34,5 +37,9 @@ void write_joypad(u8 val);
 void press_key(keys_e key);
 
 void release_key(keys_e key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -7,6 +7,10 @@
 # include "memory.h"
 # include "cpu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u8* lcdc;	// LCD Control
 	u8* stat;	// LCD status
@@ -94,5 +98,9 @@ int is_stat(u8 stat);
 void oam_scan();
 
 void draw_scanline();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

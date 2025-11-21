@@ -16,6 +16,10 @@
 # include "object.h"
 # include "joypad.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	SDL_Window* window;
@@ -61,6 +65,8 @@ void close_app();
 
 int run_emulator();
 
+void process_frame();
+
 long get_current_time();
 
 void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels);
@@ -72,5 +78,9 @@ void display_vram();
 void display_background(window_t* window, u16 start_address);
 
 void handle_events();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

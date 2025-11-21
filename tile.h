@@ -5,6 +5,10 @@
 # include "memory.h"
 # include "ppu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef u8* tile;
 
 extern tile tiles[0x180];
@@ -38,5 +42,9 @@ pixel_code get_pixel_code(tile t, int x, int y);
 pixel_code get_palette_code(pixel_code code, u16 data_address);
 
 pixel_color get_color(pixel_code code);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

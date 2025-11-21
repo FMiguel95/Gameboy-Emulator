@@ -3,6 +3,10 @@
 
 # include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u8 y_pos;
 	u8 x_pos;
@@ -20,5 +24,9 @@ typedef enum {
 	ATTRIBUTE_6,	// Y flip
 	ATTRIBUTE_7		// Priority
 } ATTRIBUTE_bit;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

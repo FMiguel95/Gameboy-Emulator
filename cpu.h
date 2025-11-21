@@ -6,6 +6,10 @@
 # include <unistd.h>
 # include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	u16 reg16_AF;
 	u8* reg8_A;
@@ -1579,5 +1583,9 @@ static const char* opcode_decode[0x100] = {
 	[0xFE] = "CP A, n8",
 	[0xFF] = "RST $38"
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
