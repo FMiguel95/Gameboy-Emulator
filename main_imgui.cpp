@@ -5,6 +5,331 @@
 #include <stdio.h>
 #include "emulator.h"
 
+void imgui_menubar()
+{
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Load ROM...")) {}
+			if (ImGui::MenuItem("Save State", nullptr, false, false)) {}
+			if (ImGui::MenuItem("Load State", nullptr, false, false)) {}
+			if (ImGui::MenuItem("Exit")) { emulator.quit = 1; }
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Emulation"))
+		{
+			if (ImGui::MenuItem("Fast Forward", "Space")) {}
+			if (ImGui::MenuItem("Pause", "P")) {}
+			if (ImGui::MenuItem("Reset", "R")) {}
+			if (ImGui::MenuItem("Stop")) {}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Cut", "Ctrl+X")) {}
+			if (ImGui::MenuItem("Copy", "Ctrl+C")) {}
+			if (ImGui::MenuItem("Paste", "Ctrl+V")) {}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+}
+
+void imgui_cpu()
+{
+	if (ImGui::Begin("CPU"))
+	{
+		ImGui::BeginTable("cpu registers", 2);
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::Text("A:%02X", *cpu.reg8_A);
+		ImGui::SameLine();
+		ImGui::Text("F:%02X", *cpu.reg8_F);
+		ImGui::Text("B:%02X", *cpu.reg8_B);
+		ImGui::SameLine();
+		ImGui::Text("C:%02X", *cpu.reg8_C);
+		ImGui::Text("D:%02X", *cpu.reg8_D);
+		ImGui::SameLine();
+		ImGui::Text("E:%02X", *cpu.reg8_E);
+		ImGui::Text("H:%02X", *cpu.reg8_H);
+		ImGui::SameLine();
+		ImGui::Text("L:%02X", *cpu.reg8_L);
+
+		ImGui::TableSetColumnIndex(1);
+		// ImGui::Separator();
+		ImGui::Text("SP: %04X", cpu.reg16_SP);
+		ImGui::Text("PC: %04X", cpu.reg16_PC);
+		ImGui::Text("Z N H C");
+		ImGui::Text("%d %d %d %d", get_flag(*cpu.reg8_F, flag_z), get_flag(*cpu.reg8_F, flag_n), get_flag(*cpu.reg8_F, flag_h), get_flag(*cpu.reg8_F, flag_c));
+		ImGui::EndTable();
+
+		ImGui::Separator();
+		ImGui::Checkbox("IME", (bool*)&cpu.IME);
+		
+		u8 reg_IE = read8_absolute(IE);
+		u8 reg_IF = read8_absolute(IF);
+		bool ie0 = get_flag(reg_IE, VBlank);
+		bool ie1 = get_flag(reg_IE, LCD);
+		bool ie2 = get_flag(reg_IE, Timer);
+		bool ie3 = get_flag(reg_IE, Serial);
+		bool ie4 = get_flag(reg_IE, Joypad);
+		bool if0 = get_flag(reg_IF, VBlank);
+		bool if1 = get_flag(reg_IF, LCD);
+		bool if2 = get_flag(reg_IF, Timer);
+		bool if3 = get_flag(reg_IF, Serial);
+		bool if4 = get_flag(reg_IF, Joypad);
+
+		ImGui::BeginTable("interrupts", 3);
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		// ImGui::Text("IME");
+		ImGui::TableNextColumn();
+		ImGui::Text("IE");
+		ImGui::TableNextColumn();
+		ImGui::Text("IF");
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("VBlank");
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##ie0", &ie0);
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##if0", &if0);
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("LCD");
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##ie1", &ie1);
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##if1", &if1);
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("Timer");
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##ie2", &ie2);
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##if2", &if2);
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("Serial");
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##ie3", &ie3);
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##if3", &if3);
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("Joypad");
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##ie4", &ie4);
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("##if4", &if4);
+		ImGui::EndTable();
+
+		set_flag(&reg_IE, 0, ie0);
+		set_flag(&reg_IE, 1, ie1);
+		set_flag(&reg_IE, 2, ie2);
+		set_flag(&reg_IE, 3, ie3);
+		set_flag(&reg_IE, 4, ie4);
+		write8_absolute(IE, reg_IE);
+		set_flag(&reg_IF, 0, if0);
+		set_flag(&reg_IF, 1, if1);
+		set_flag(&reg_IF, 2, if2);
+		set_flag(&reg_IF, 3, if3);
+		set_flag(&reg_IF, 4, if4);
+		write8_absolute(IF, reg_IF);
+	}
+	ImGui::End();
+}
+
+void imgui_timers()
+{
+	if (ImGui::Begin("Timer"))
+	{
+		ImGui::Text("DIV: %02X", *timers.div);
+		ImGui::Text("TAC enable: %d", get_flag(*timers.tac, 2));
+		ImGui::Text("TAC clock: %d", *timers.tac & 0b11);
+		ImGui::Text("TIMA: %02X", *timers.tima);
+		ImGui::Text("TMA: %02X", *timers.tma);
+	}
+	ImGui::End();
+}
+
+void imgui_screen(SDL_Texture* tex_screen)
+{
+	if (ImGui::Begin("Screen"))
+	{
+		SDL_UpdateTexture(tex_screen, NULL, ppu.pixel_buffer_public, WIN_SCREEN_SIZE_X * 4);
+		ImGui::Image(tex_screen, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
+	}
+	ImGui::End();
+}
+
+void imgui_ppu()
+{
+	if (ImGui::Begin("PPU"))
+	{
+		ImGui::Text("Dots: %03d/455", ppu.scanline_cycle * 4);
+		ImGui::Text("Line: %03d/153", *ppu.ly);
+		ImGui::Text("Scroll: %03d,%03d", *ppu.scx, *ppu.scy);
+		ImGui::Text("Window: %03d,%03d", *ppu.wx, *ppu.wy);
+		ImGui::Text("DMA: %02X", *ppu.dma);
+		// ImGui::Text("Background Palette: %d", *ppu.bgp);
+		// ImGui::Text("Obj Palette 1: %d", *ppu.obp0);
+		// ImGui::Text("Obj Palette 2: %d", *ppu.obp1);
+
+		ImGui::SeparatorText("LCD Control");
+		u8 reg_LCDC = read8_absolute(LCDC);
+		bool lcdc0 = get_flag(reg_LCDC, LCDC_0);
+		bool lcdc1 = get_flag(reg_LCDC, LCDC_1);
+		bool lcdc2 = get_flag(reg_LCDC, LCDC_2);
+		bool lcdc3 = get_flag(reg_LCDC, LCDC_3);
+		bool lcdc4 = get_flag(reg_LCDC, LCDC_4);
+		bool lcdc5 = get_flag(reg_LCDC, LCDC_5);
+		bool lcdc6 = get_flag(reg_LCDC, LCDC_6);
+		bool lcdc7 = get_flag(reg_LCDC, LCDC_7);
+
+		ImGui::Checkbox("LCD Enable", &lcdc7);
+		ImGui::Checkbox("BG & Win Enable", &lcdc0);
+		ImGui::Text("Background Tilemap");
+		if (ImGui::RadioButton("9800-9BFF##lcdc3", !lcdc3)) { lcdc3 = false; }
+		ImGui::SameLine();
+		if (ImGui::RadioButton("9C00-9FFF##lcdc3", lcdc3)) { lcdc3 = true; }
+		ImGui::Checkbox("Window Enable", &lcdc5);
+		ImGui::Text("Window Tilemap");
+		if (ImGui::RadioButton("9800-9BFF##lcdc6", !lcdc6)) { lcdc6 = false; }
+		ImGui::SameLine();
+		if (ImGui::RadioButton("9C00-9FFF##lcdc6", lcdc6)) { lcdc6 = true; }
+		ImGui::Text("BG & Win Tile Addressing Mode");
+		if (ImGui::RadioButton("8800-97FF##lcdc4", !lcdc4)) { lcdc4 = false; }
+		ImGui::SameLine();
+		if (ImGui::RadioButton("8000-8FFF##lcdc4", lcdc4)) { lcdc4 = true; }
+		ImGui::Checkbox("Object Enable", &lcdc1);
+		ImGui::Checkbox("Tall Objects", &lcdc2);
+
+		set_flag(&reg_LCDC, LCDC_0, lcdc0);
+		set_flag(&reg_LCDC, LCDC_1, lcdc1);
+		set_flag(&reg_LCDC, LCDC_2, lcdc2);
+		set_flag(&reg_LCDC, LCDC_3, lcdc3);
+		set_flag(&reg_LCDC, LCDC_4, lcdc4);
+		set_flag(&reg_LCDC, LCDC_5, lcdc5);
+		set_flag(&reg_LCDC, LCDC_6, lcdc6);
+		set_flag(&reg_LCDC, LCDC_7, lcdc7);
+		write8_absolute(LCDC, reg_LCDC);
+
+		ImGui::SeparatorText("LCD Status");
+		u8 reg_STAT = read8_absolute(STAT);
+		bool stat2 = get_flag(reg_STAT, STAT_2);
+		bool stat3 = get_flag(reg_STAT, STAT_3);
+		bool stat4 = get_flag(reg_STAT, STAT_4);
+		bool stat5 = get_flag(reg_STAT, STAT_5);
+		bool stat6 = get_flag(reg_STAT, STAT_6);
+		ImGui::Text("PPU Mode: %d", reg_STAT & 0b11);
+		ImGui::Text("LYC: %d", *ppu.lyc);
+		ImGui::Checkbox("LYC == LY", &stat2);
+		ImGui::Checkbox("Mode 0 int", &stat3);
+		ImGui::Checkbox("Mode 1 int", &stat4);
+		ImGui::Checkbox("Mode 2 int", &stat5);
+		ImGui::Checkbox("LYC int", &stat6);
+		ImGui::Checkbox("STAT trigger", (bool*)&ppu.stat_state);
+		ImGui::SameLine();
+		ImGui::Checkbox("STAT previous", (bool*)&ppu.prev_stat_state);
+
+		set_flag(&reg_STAT, STAT_2, stat2);
+		set_flag(&reg_STAT, STAT_3, stat3);
+		set_flag(&reg_STAT, STAT_4, stat4);
+		set_flag(&reg_STAT, STAT_5, stat5);
+		set_flag(&reg_STAT, STAT_6, stat6);
+		write8_absolute(STAT, reg_STAT);
+
+	}
+	ImGui::End();
+}
+
+void imgui_vram(SDL_Texture* tex_vram)
+{
+	int tex_vram_pixels[WIN_VRAM_SIZE_X * WIN_VRAM_SIZE_Y];
+
+	if (ImGui::Begin("VRAM"))
+	{
+		size_t tiles_per_row = 16;
+		for (size_t y = 0; y < WIN_VRAM_SIZE_Y; y++)
+		{
+			for (size_t x = 0; x < WIN_VRAM_SIZE_X; x++)
+			{
+				size_t tile_x = x / 8;
+				size_t tile_y = y / 8;
+				size_t tile_index = tile_y * tiles_per_row + tile_x;
+				pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
+				pixel_color color = get_color(color_code);
+
+				tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
+			}
+		}
+		SDL_UpdateTexture(tex_vram, NULL, tex_vram_pixels, WIN_VRAM_SIZE_X * 4);
+		ImGui::Image(tex_vram, ImVec2(WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y));
+	}
+	ImGui::End();
+}
+
+static void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int* pixels)
+{
+	for (size_t i = 0; i < length; i++)
+	{
+		int index = (u8)pos_y * 256 + (u8)pos_x;
+		pixels[index] = ~pixels[index];
+		pos_x += dir_x;
+		pos_y += dir_y;
+	}
+}
+void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
+{
+	int tex_map_pixels[WIN_BACKGROUND_SIZE_X * WIN_BACKGROUND_SIZE_Y];
+
+	if (ImGui::Begin("Map $9800"))
+	{
+		size_t tiles_per_row = 32;
+		for (size_t y = 0; y < WIN_BACKGROUND_SIZE_Y; y++)
+		{
+			for (size_t x = 0; x < WIN_BACKGROUND_SIZE_X; x++)
+			{
+				u8 tile_id = memory.video_ram[0x1800 + (y / 8) * tiles_per_row + (x / 8)];
+				tile t = tiles[convert_tile_index(tile_id)];
+				pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
+				pixel_color color = get_color(color_code);
+
+				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
+			}
+		}
+		draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+		draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+		draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		SDL_UpdateTexture(tex_map9800, NULL, tex_map_pixels, WIN_BACKGROUND_SIZE_X * 4);
+		ImGui::Image(tex_map9800, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Map $9C00"))
+	{
+		size_t tiles_per_row = 32;
+		for (size_t y = 0; y < WIN_BACKGROUND_SIZE_Y; y++)
+		{
+			for (size_t x = 0; x < WIN_BACKGROUND_SIZE_X; x++)
+			{
+				u8 tile_id = memory.video_ram[0x1C00 + (y / 8) * tiles_per_row + (x / 8)];
+				tile t = tiles[convert_tile_index(tile_id)];
+				pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
+				pixel_color color = get_color(color_code);
+
+				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
+			}
+		}
+		draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+		draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+		draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		SDL_UpdateTexture(tex_map9C00, NULL, tex_map_pixels, WIN_BACKGROUND_SIZE_X * 4);
+		ImGui::Image(tex_map9C00, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
+	}
+	ImGui::End();
+}
 
 int main(int ac, char** av)
 {
@@ -60,40 +385,10 @@ int main(int ac, char** av)
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	SDL_ShowWindow(window);
 
-	SDL_Texture* tex_screen = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_RGBX32,
-		SDL_TEXTUREACCESS_STREAMING,
-		WIN_SCREEN_SIZE_X,
-		WIN_SCREEN_SIZE_Y
-	);
-
-	SDL_Texture* tex_vram = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_RGBX32,
-		SDL_TEXTUREACCESS_STREAMING,
-		WIN_VRAM_SIZE_X,
-		WIN_VRAM_SIZE_Y
-	);
-	int tex_vram_pixels[WIN_VRAM_SIZE_X * WIN_VRAM_SIZE_Y];
-
-	SDL_Texture* tex_map9800 = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_RGBX32,
-		SDL_TEXTUREACCESS_STREAMING,
-		WIN_BACKGROUND_SIZE_X,
-		WIN_BACKGROUND_SIZE_Y
-	);
-	int tex_map9800_pixels[WIN_BACKGROUND_SIZE_X * WIN_BACKGROUND_SIZE_Y];
-
-	SDL_Texture* tex_map9C00 = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_RGBX32,
-		SDL_TEXTUREACCESS_STREAMING,
-		WIN_BACKGROUND_SIZE_X,
-		WIN_BACKGROUND_SIZE_Y
-	);
-	int tex_map9C00_pixels[WIN_BACKGROUND_SIZE_X * WIN_BACKGROUND_SIZE_Y];
+	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_Texture* tex_vram = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -117,9 +412,8 @@ int main(int ac, char** av)
 
 
 
-	bool done = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	while (!done)
+	while (!emulator.quit)
 	{
 		long start_time = get_current_time();
 
@@ -128,9 +422,9 @@ int main(int ac, char** av)
 		{
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			if (event.type == SDL_EVENT_QUIT)
-				done = true;
+				emulator.quit = 1;
 			if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
-				done = true;
+				emulator.quit = 1;
 
 			// on key down
 			if (event.type == SDL_EVENT_KEY_DOWN)
@@ -199,192 +493,13 @@ int main(int ac, char** av)
 		ImGui::NewFrame();
 		ImGui::DockSpaceOverViewport();
 
-		if (ImGui::BeginMainMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Load ROM...")) {}
-				if (ImGui::MenuItem("Save State", nullptr, false, false)) {}
-				if (ImGui::MenuItem("Load State", nullptr, false, false)) {}
-				if (ImGui::MenuItem("Exit")) { done = true; }
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Emulation"))
-			{
-				if (ImGui::MenuItem("Fast Forward", "Space")) {}
-				if (ImGui::MenuItem("Pause", "P")) {}
-				if (ImGui::MenuItem("Reset", "R")) {}
-				if (ImGui::MenuItem("Stop")) {}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Cut", "Ctrl+X")) {}
-				if (ImGui::MenuItem("Copy", "Ctrl+C")) {}
-				if (ImGui::MenuItem("Paste", "Ctrl+V")) {}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMainMenuBar();
-		}
-
-		if (ImGui::Begin("CPU"))
-		{
-			ImGui::BeginTable("cpu registers", 2);
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-			ImGui::Text("A:%02X", *cpu.reg8_A);
-			ImGui::SameLine();
-			ImGui::Text("F:%02X", *cpu.reg8_F);
-			ImGui::Text("B:%02X", *cpu.reg8_B);
-			ImGui::SameLine();
-			ImGui::Text("C:%02X", *cpu.reg8_C);
-			ImGui::Text("D:%02X", *cpu.reg8_D);
-			ImGui::SameLine();
-			ImGui::Text("E:%02X", *cpu.reg8_E);
-			ImGui::Text("H:%02X", *cpu.reg8_H);
-			ImGui::SameLine();
-			ImGui::Text("L:%02X", *cpu.reg8_L);
-
-			ImGui::TableSetColumnIndex(1);
-			// ImGui::Separator();
-			ImGui::Text("SP: %04X", cpu.reg16_SP);
-			ImGui::Text("PC: %04X", cpu.reg16_PC);
-			ImGui::Text("Z N H C");
-			ImGui::Text("%d %d %d %d", get_flag(*cpu.reg8_F, flag_z), get_flag(*cpu.reg8_F, flag_n), get_flag(*cpu.reg8_F, flag_h), get_flag(*cpu.reg8_F, flag_c));
-			ImGui::EndTable();
-
-			ImGui::Separator();
-			ImGui::Checkbox("IME", (bool*)&cpu.IME);
-			
-			u8 reg_IE = read8_absolute(IE);
-			u8 reg_IF = read8_absolute(IF);
-			ImGui::BeginTable("interrupts", 3);
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			// ImGui::Text("IME");
-			ImGui::TableNextColumn();
-			ImGui::Text("IE");
-			ImGui::TableNextColumn();
-			ImGui::Text("IF");
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			ImGui::Text("VBlank");
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IE, VBlank));
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IF, VBlank));
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			ImGui::Text("LCD");
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IE, LCD));
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IF, LCD));
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			ImGui::Text("Timer");
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IE, Timer));
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IF, Timer));
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			ImGui::Text("Serial");
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IE, Serial));
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IF, Serial));
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-			ImGui::Text("Joypad");
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IE, Joypad));
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", get_flag(reg_IF, Joypad));
-			ImGui::EndTable();
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("Timer"))
-		{
-			ImGui::Text("DIV: %02X", *timers.div);
-			ImGui::Text("TAC enable: %d", get_flag(*timers.tac, 2));
-			ImGui::Text("TAC clock: %d", *timers.tac & 0b11);
-			ImGui::Text("TIMA: %02X", *timers.tima);
-			ImGui::Text("TMA: %02X", *timers.tma);
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("Screen"))
-		{
-			SDL_UpdateTexture(tex_screen, NULL, ppu.pixel_buffer_public, WIN_SCREEN_SIZE_X * 4);
-			ImGui::Image(tex_screen, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
-		}
-		ImGui::End();
-
-		if (ImGui::Begin("PPU"))
-		{
-			if (ImGui::Begin("VRAM"))
-			{
-				size_t tiles_per_row = 16;
-				for (size_t y = 0; y < WIN_VRAM_SIZE_Y; y++)
-				{
-					for (size_t x = 0; x < WIN_VRAM_SIZE_X; x++)
-					{
-						size_t tile_x = x / 8;
-						size_t tile_y = y / 8;
-						size_t tile_index = tile_y * tiles_per_row + tile_x;
-						pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
-						pixel_color color = get_color(color_code);
-	
-						tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
-					}
-				}
-				SDL_UpdateTexture(tex_vram, NULL, tex_vram_pixels, WIN_VRAM_SIZE_X * 4);
-				ImGui::Image(tex_vram, ImVec2(WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y));
-			}
-			ImGui::End();
-			
-			if (ImGui::Begin("Map $9800"))
-			{
-				size_t tiles_per_row = 32;
-				for (size_t y = 0; y < WIN_BACKGROUND_SIZE_Y; y++)
-				{
-					for (size_t x = 0; x < WIN_BACKGROUND_SIZE_X; x++)
-					{
-						u8 tile_id = memory.video_ram[0x1800 + (y / 8) * tiles_per_row + (x / 8)];
-						tile t = tiles[convert_tile_index(tile_id)];
-						pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
-						pixel_color color = get_color(color_code);
-	
-						tex_map9800_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
-					}
-				}
-				SDL_UpdateTexture(tex_map9800, NULL, tex_map9800_pixels, WIN_BACKGROUND_SIZE_X * 4);
-				ImGui::Image(tex_map9800, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
-			}
-			ImGui::End();
-
-			if (ImGui::Begin("Map $9C00"))
-			{
-				size_t tiles_per_row = 32;
-				for (size_t y = 0; y < WIN_BACKGROUND_SIZE_Y; y++)
-				{
-					for (size_t x = 0; x < WIN_BACKGROUND_SIZE_X; x++)
-					{
-						u8 tile_id = memory.video_ram[0x1C00 + (y / 8) * tiles_per_row + (x / 8)];
-						tile t = tiles[convert_tile_index(tile_id)];
-						pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
-						pixel_color color = get_color(color_code);
-	
-						tex_map9C00_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
-					}
-				}
-				SDL_UpdateTexture(tex_map9C00, NULL, tex_map9C00_pixels, WIN_BACKGROUND_SIZE_X * 4);
-				ImGui::Image(tex_map9C00, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
-			}
-			ImGui::End();
-		}
-		ImGui::End();
-
-
+		imgui_menubar();
+		imgui_cpu();
+		imgui_timers();
+		imgui_screen(tex_screen);
+		imgui_ppu();
+		imgui_vram(tex_vram);
+		imgui_maps(tex_map9800, tex_map9C00);
 
 
 		// Rendering

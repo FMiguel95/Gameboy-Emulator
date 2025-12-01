@@ -33,6 +33,9 @@ typedef struct {
 	int wy_equaled_ly;
 	int line_153_glitch;
 
+	int stat_state;
+	int prev_stat_state;
+
 	int pixel_buffer1[23040];	// 160 * 144
 	int pixel_buffer2[23040];
 	int* pixel_buffer_public;

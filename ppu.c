@@ -29,6 +29,8 @@ int init_ppu()
 
 void ppu_tick()
 {
+	ppu.prev_stat_state = ppu.stat_state;
+	ppu.stat_state = 0;
 	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
 	{
 		*ppu.ly = 0;
@@ -39,8 +41,6 @@ void ppu_tick()
 		ppu.line_153_glitch = 0;
 		return;
 	}
-
-	static int prev_stat_state;
 
 	ppu.scanline_cycle++;
 	if (*ppu.ly == 153 && ppu.scanline_cycle == 2)	// ly 153 will show as 0 for most of the line
@@ -95,15 +95,14 @@ void ppu_tick()
 	}
 
 	set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
-	int stat_state = is_stat(*ppu.stat);
-	if (!prev_stat_state && stat_state)
+	ppu.stat_state = is_stat(*ppu.stat);
+	if (!ppu.prev_stat_state && ppu.stat_state)
 	{
 		u8 IF_val = read8(IF);
 		set_flag(&IF_val, LCD, 1);
 		write8(IF, IF_val);
 		// printf("STAT irq line: %d\n", *ppu.ly);
 	}
-	prev_stat_state = stat_state;
 }
 
 void ppu_set_mode(ppu_mode mode)
