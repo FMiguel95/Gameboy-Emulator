@@ -164,7 +164,7 @@ int run_emulator()
 		// handle_events();
 
 		if (!emulator.paused)
-			process_frame();
+			run_clock(FRAME_CYCLES);
 
 		// display_screen();
 		// display_vram();
@@ -183,9 +183,9 @@ int run_emulator()
 	return 0;
 }
 
-void process_frame()
+void run_clock(int n_cycles)
 {
-	for (size_t i = 0; i < FRAME_CYCLES; i++)
+	for (size_t i = 0; i < n_cycles; i++)
 	{
 		timers_tick();
 		cpu_tick();

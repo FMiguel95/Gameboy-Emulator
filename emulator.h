@@ -65,7 +65,7 @@ void close_app();
 
 int run_emulator();
 
-void process_frame();
+void run_clock(int n_cycles);
 
 long get_current_time();
 

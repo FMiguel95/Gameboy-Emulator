@@ -161,6 +161,12 @@ void imgui_screen(SDL_Texture* tex_screen)
 		ImGui::Image(tex_screen, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
 	}
 	ImGui::End();
+	if (ImGui::Begin("Next Frame"))
+	{
+		SDL_UpdateTexture(tex_screen, NULL, ppu.pixel_buffer_private, WIN_SCREEN_SIZE_X * 4);
+		ImGui::Image(tex_screen, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
+	}
+	ImGui::End();
 }
 
 void imgui_ppu()
@@ -340,6 +346,22 @@ void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 	ImGui::End();
 }
 
+void imgui_buttons()
+{
+	if (ImGui::Begin("Buttons"))
+	{
+		const char* label = emulator.paused ? "Continue" : " Pause  ";
+		if (ImGui::Button(label)) { emulator.paused = !emulator.paused; }
+		ImGui::SameLine();
+		if (ImGui::Button("> m-cycle")) {  }
+		ImGui::SameLine();
+		if (ImGui::Button(">> scanline")) {  }
+		ImGui::SameLine();
+		if (ImGui::Button(">>> frame")) {  }
+	}
+	ImGui::End();
+}
+
 int main(int ac, char** av)
 {
 	if (ac <= 1)
@@ -494,7 +516,7 @@ int main(int ac, char** av)
 
 		// emulator
 		if (!emulator.paused)
-			process_frame();
+			run_clock(FRAME_CYCLES);
 
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer3_NewFrame();
@@ -509,7 +531,7 @@ int main(int ac, char** av)
 		imgui_ppu();
 		imgui_vram(tex_vram);
 		imgui_maps(tex_map9800, tex_map9C00);
-
+		imgui_buttons();
 
 		// Rendering
 		ImGui::Render();

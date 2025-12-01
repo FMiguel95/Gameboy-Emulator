@@ -239,7 +239,8 @@ void opcode00() { NOP(); }
 
 void HALT()
 {
-	cpu.halt_mode = 1;
+	if (!(read8(IE) & read8(IF)))
+		cpu.halt_mode = 1;
 	// printf("HALT\n");
 }
 void opcode76() { HALT(); }
