@@ -37,6 +37,8 @@ void imgui_cpu()
 {
 	if (ImGui::Begin("CPU"))
 	{
+		ImGui::Text("$%04X: %s", cpu.reg16_PC, decode_opcode(cpu.reg16_PC));
+		ImGui::Separator();
 		ImGui::BeginTable("cpu registers", 2);
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -281,6 +283,7 @@ static void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, in
 void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 {
 	int tex_map_pixels[WIN_BACKGROUND_SIZE_X * WIN_BACKGROUND_SIZE_Y];
+	u8 lcdc = read8_absolute(LCDC);
 
 	if (ImGui::Begin("Map $9800"))
 	{
@@ -297,10 +300,13 @@ void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
 			}
 		}
-		draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
-		draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
-		draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
-		draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		if (!get_flag(lcdc, LCDC_3))
+		{
+			draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+			draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+			draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+			draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		}
 		SDL_UpdateTexture(tex_map9800, NULL, tex_map_pixels, WIN_BACKGROUND_SIZE_X * 4);
 		ImGui::Image(tex_map9800, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
 	}
@@ -321,10 +327,13 @@ void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
 			}
 		}
-		draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
-		draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
-		draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
-		draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		if (get_flag(lcdc, LCDC_3))
+		{
+			draw_line(read8(SCX), read8(SCY), 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+			draw_line(read8(SCX), read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+			draw_line(read8(SCX), read8(SCY) + WIN_SCREEN_SIZE_Y, 1, 0, WIN_SCREEN_SIZE_X, tex_map_pixels);
+			draw_line(read8(SCX) + WIN_SCREEN_SIZE_X, read8(SCY), 0, 1, WIN_SCREEN_SIZE_Y, tex_map_pixels);
+		}
 		SDL_UpdateTexture(tex_map9C00, NULL, tex_map_pixels, WIN_BACKGROUND_SIZE_X * 4);
 		ImGui::Image(tex_map9C00, ImVec2(WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y));
 	}

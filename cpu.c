@@ -204,7 +204,7 @@ void cpu_print_status()
 	if (cpu.prefix_instruction)
 		printf(">> CB %.2X\n", read8(cpu.reg16_PC));
 	else
-		printf(">> %s\n", opcode_decode[read8(cpu.reg16_PC)]);
+		printf(">> %s\n", opcodes_decoded[read8(cpu.reg16_PC)]);
 	getchar();
 }
 
@@ -2600,3 +2600,12 @@ void SWAP_HL() // 4 2
 	cpu.instruction_cycles_remain--;
 }
 void opcodeCB36() { SWAP_HL(); }
+
+const char* decode_opcode(u16 address)
+{
+	u8 opcode = read8_absolute(address);
+	if (opcode != 0xCB)
+		return opcodes_decoded[opcode];
+	opcode = read8_absolute(address + 1);
+	return opcodes_decoded_CB[opcode];
+}
