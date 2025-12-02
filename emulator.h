@@ -30,6 +30,9 @@ typedef struct
 typedef struct
 {
 	int paused;
+	int request_cycle;
+	int request_scanline;
+	int request_frame;
 	int quit;
 	int fforward;
 	char* rom_file_name;

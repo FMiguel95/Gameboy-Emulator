@@ -353,11 +353,11 @@ void imgui_buttons()
 		const char* label = emulator.paused ? "Continue" : " Pause  ";
 		if (ImGui::Button(label)) { emulator.paused = !emulator.paused; }
 		ImGui::SameLine();
-		if (ImGui::Button("> m-cycle")) {  }
+		if (ImGui::Button("> m-cycle")) { emulator.request_cycle = 1; }
 		ImGui::SameLine();
-		if (ImGui::Button(">> scanline")) {  }
+		if (ImGui::Button(">> scanline")) { emulator.request_scanline = 1; }
 		ImGui::SameLine();
-		if (ImGui::Button(">>> frame")) {  }
+		if (ImGui::Button(">>> frame")) { emulator.request_frame = 1; }
 	}
 	ImGui::End();
 }
@@ -514,9 +514,26 @@ int main(int ac, char** av)
 
 		}
 
+		int cycles_to_run = FRAME_CYCLES;
+		if (emulator.paused)
+			cycles_to_run = 0;
+		if (emulator.request_frame)
+		{
+			emulator.request_frame = 0;
+			cycles_to_run = FRAME_CYCLES;
+		}
+		if (emulator.request_scanline)
+		{
+			emulator.request_scanline = 0;
+			cycles_to_run = 114;
+		}
+		if (emulator.request_cycle)
+		{
+			emulator.request_cycle = 0;
+			cycles_to_run = 1;
+		}
 		// emulator
-		if (!emulator.paused)
-			run_clock(FRAME_CYCLES);
+		run_clock(cycles_to_run);
 
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer3_NewFrame();
