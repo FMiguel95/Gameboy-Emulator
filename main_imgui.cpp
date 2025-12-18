@@ -37,7 +37,7 @@ void imgui_cpu()
 {
 	if (ImGui::Begin("CPU"))
 	{
-		ImGui::Text("$%04X: %s", cpu.reg16_PC, decode_opcode(cpu.reg16_PC));
+		ImGui::Text("$%04X: %s", cpu.reg16_PC - 1, decode_opcode(cpu.loaded_opcode));
 		ImGui::Separator();
 		ImGui::BeginTable("cpu registers", 2);
 		ImGui::TableNextRow();
@@ -153,7 +153,7 @@ void imgui_timers()
 	ImGui::End();
 }
 
-void imgui_screen(SDL_Texture* tex_screen)
+void imgui_screen(SDL_Texture* tex_screen, SDL_Texture* tex_screen_next)
 {
 	if (ImGui::Begin("Screen"))
 	{
@@ -163,8 +163,8 @@ void imgui_screen(SDL_Texture* tex_screen)
 	ImGui::End();
 	if (ImGui::Begin("Next Frame"))
 	{
-		SDL_UpdateTexture(tex_screen, NULL, ppu.pixel_buffer_private, WIN_SCREEN_SIZE_X * 4);
-		ImGui::Image(tex_screen, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
+		SDL_UpdateTexture(tex_screen_next, NULL, ppu.pixel_buffer_private, WIN_SCREEN_SIZE_X * 4);
+		ImGui::Image(tex_screen_next, ImVec2(WIN_SCREEN_SIZE_X * 2, WIN_SCREEN_SIZE_Y * 2));
 	}
 	ImGui::End();
 }
@@ -417,6 +417,7 @@ int main(int ac, char** av)
 	SDL_ShowWindow(window);
 
 	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_Texture* tex_screen_next = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 	SDL_Texture* tex_vram = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
@@ -444,8 +445,11 @@ int main(int ac, char** av)
 
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	// emulator.paused = 1;
 	while (!emulator.quit)
 	{
+		if (ppu.pixel_buffer_private == ppu.pixel_buffer_public)
+			printf("wtf\n");
 		long start_time = get_current_time();
 
 		SDL_Event event;
@@ -544,7 +548,7 @@ int main(int ac, char** av)
 		imgui_menubar();
 		imgui_cpu();
 		imgui_timers();
-		imgui_screen(tex_screen);
+		imgui_screen(tex_screen, tex_screen_next);
 		imgui_ppu();
 		imgui_vram(tex_vram);
 		imgui_maps(tex_map9800, tex_map9C00);
@@ -573,6 +577,7 @@ int main(int ac, char** av)
 	ImGui::DestroyContext();
 
 	SDL_DestroyTexture(tex_screen);
+	SDL_DestroyTexture(tex_screen_next);
 	SDL_DestroyTexture(tex_vram);
 	SDL_DestroyTexture(tex_map9800);
 	SDL_DestroyTexture(tex_map9C00);

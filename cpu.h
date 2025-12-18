@@ -39,6 +39,7 @@ typedef struct {
 	u8 halt_mode;
 
 	void (*instruction_to_execute)();
+	u8 loaded_opcode;
 	u8 prefix_instruction;
 	u8 instruction_cycles_remain;
 
@@ -1843,7 +1844,7 @@ static const char* opcodes_decoded_CB[0x100] = {
 	[0xFF] = "SET 7, A"
 };
 
-const char* decode_opcode(u16 address);
+const char* decode_opcode(u8 code);
 
 #ifdef __cplusplus
 }

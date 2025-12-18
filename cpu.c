@@ -64,13 +64,14 @@ void cpu_tick()
 		if (!cpu.prefix_instruction)
 		{
 			// cpu_log();
-			u8 opcode = read8(cpu.reg16_PC++);
-			cpu.instruction_to_execute = instruction_set[opcode];
+			cpu.loaded_opcode = read8(cpu.reg16_PC++);
+			cpu.instruction_to_execute = instruction_set[cpu.loaded_opcode];
 			interrupt_handler();	// interrupt servicing happens after fetching the next opcode
 		}
 		else
 		{
-			cpu.instruction_to_execute = CB_set[read8(cpu.reg16_PC++)];
+			cpu.loaded_opcode = read8(cpu.reg16_PC++);
+			cpu.instruction_to_execute = CB_set[cpu.loaded_opcode];
 			cpu.prefix_instruction = 0;
 		}
 
@@ -2602,11 +2603,10 @@ void SWAP_HL() // 4 2
 }
 void opcodeCB36() { SWAP_HL(); }
 
-const char* decode_opcode(u16 address)
+const char* decode_opcode(u8 code)
 {
-	u8 opcode = read8_absolute(address);
-	if (opcode != 0xCB)
-		return opcodes_decoded[opcode];
-	opcode = read8_absolute(address + 1);
-	return opcodes_decoded_CB[opcode];
+	if (cpu.prefix_instruction)
+		return opcodes_decoded_CB[code];
+	else
+		return opcodes_decoded[code];
 }

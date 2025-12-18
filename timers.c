@@ -17,8 +17,7 @@ int init_timers()
 void timers_tick()
 {
 	timers.div_counter += 4;
-	if ((timers.div_counter & 0xFF) == 0)
-		(*timers.div)++;
+	*timers.div = timers.div_counter >> 8;
 	
 	if (get_flag(*timers.tac, 2))	// if tac bit 2, tima is incremented
 	{

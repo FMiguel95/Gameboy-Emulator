@@ -49,7 +49,7 @@ void ppu_tick()
 		ppu.line_153_glitch = 1;
 	}
 
-	if (*ppu.wy == *ppu.ly)
+	if ((*ppu.ly < 144) && (*ppu.wy == *ppu.ly))
 		ppu.wy_equaled_ly = 1;
 
 	if (*ppu.ly < 144 && !ppu.line_153_glitch)
@@ -68,7 +68,7 @@ void ppu_tick()
 			ppu_set_mode(h_blank);
 	}
 
-	if (ppu.scanline_cycle == 114) // end of scanline
+	if (ppu.scanline_cycle == 113) // end of scanline
 	{
 		ppu.scanline_cycle = -1;
 		if (!ppu.line_153_glitch)
@@ -90,7 +90,7 @@ void ppu_tick()
 			ppu.pixel_buffer_private = ppu.pixel_buffer_public;
 			ppu.pixel_buffer_public = temp;
 
-			memset(ppu.pixel_buffer_private, 0, 23040); // screen tearing testing...
+			memset(ppu.pixel_buffer_private, 0, 23040 * sizeof(int)); // screen tearing testing...
 		}
 		// else if (*ppu.ly == 154) // end of frame
 		// 	*ppu.ly = 0;
