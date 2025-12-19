@@ -4,7 +4,8 @@ emulator_t emulator;
 
 int load_rom(const char* path)
 {
-	strcpy(emulator.rom_file_path, path);
+	if (path != emulator.rom_file_path)
+		strcpy(emulator.rom_file_path, path);
 	printf("%s\n", emulator.rom_file_path);
 	if (!read_rom(path))
 		return 0;
@@ -161,6 +162,7 @@ void close_rom()
 	free_ptr(cartridge.rom);
 	free_ptr(cartridge.mbc);
 	free_ptr(cartridge.ram);
+	// free_ptr(emulator.rom_file_name);
 }
 
 int run_emulator()
