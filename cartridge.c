@@ -209,7 +209,7 @@ void init_labels()
 
 int read_rom(const char* path)
 {
-	// init_labels();
+	init_labels();
 	FILE* file = fopen(path, "rb");
 	if (!file)
 	{

@@ -2,19 +2,29 @@
 
 emulator_t emulator;
 
-int init_app()
+int load_rom(const char* path)
 {
-	// if (SDL_Init(SDL_INIT_VIDEO) != 0)
-	// {
-	// 	printf("SDL initialization failed: %s\n", SDL_GetError());
-	// 	SDL_Quit();
-	// 	return 0;
-	// }
-
-	// // init_window(&emulator.window_background9800, "Map $9800", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	// // init_window(&emulator.window_background9C00, "Map $9C00", WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	// // init_window(&emulator.window_tiles, "Tiles", WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
-	// init_window(&emulator.window_screen, "Game Screen", WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	strcpy(emulator.rom_file_path, path);
+	printf("%s\n", emulator.rom_file_path);
+	if (!read_rom(path))
+		return 0;
+	if (!init_mbc())
+		return 0;
+	if (!init_memory())
+		return 0;
+	emulator.rom_file_name = basename(path);
+	if (!load_sram())
+		return 0;
+	if (!init_tiles())
+		return 0;
+	if (!init_joypad())
+		return 0;
+	if (!init_timers())
+		return 0;
+	if (!init_cpu())
+		return 0;
+	if (!init_ppu())
+		return 0;
 
 	emulator.paused = 0;
 	emulator.quit = 0;
@@ -22,10 +32,38 @@ int init_app()
 	return 1;
 }
 
+int ensure_dir(const char* path)
+{
+	struct stat st;
+
+	if (stat(path, &st) == 0)
+	{
+		if (S_ISDIR(st.st_mode))
+			return 1;
+		errno = ENOTDIR;
+		return 0;
+	}
+
+	if (errno != ENOENT)
+		return 0;
+
+	printf("creating directory %s\n", path);
+	if (mkdir(path, 0755) != -1)
+		return 1;
+
+	return 0;
+}
+
 int load_sram()
 {
 	if (!cartridge.battery)
 		return 1;
+
+	if (!ensure_dir("./saves"))
+	{
+		perror("./saves");
+		return 1;
+	}
 
 	int rom_file_name_len = strlen(emulator.rom_file_name);
 	strncpy(emulator.save_file_path, "./saves/", 8);
@@ -67,92 +105,62 @@ int load_sram()
 	return 1;
 }
 
-// int init_window(window_t* window, char* title, int size_x, int size_y)
-// {
-// 	window->window = SDL_CreateWindow(
-// 		title,
-// 		SDL_WINDOWPOS_CENTERED,
-// 		SDL_WINDOWPOS_CENTERED,
-// 		size_x * WIN_SCALE,
-// 		size_y * WIN_SCALE,
-// 		SDL_WINDOW_SHOWN
-// 	);
-// 	if (!window->window)
-// 	{
-// 		printf("Window creation failed: %s\n", SDL_GetError());
-// 		SDL_Quit();
-// 		return 0;
-// 	}
-// 	window->renderer = SDL_CreateRenderer(window->window, -1, SDL_RENDERER_ACCELERATED);
-// 	if (!window->renderer)
-// 	{
-// 		printf("SDL initialization failed: %s\n", SDL_GetError());
-// 		SDL_DestroyWindow(window->window);
-// 		SDL_Quit();
-// 		return 0;
-// 	}
-// 	SDL_RenderSetLogicalSize(window->renderer, size_x, size_y);
-// 	SDL_RenderSetIntegerScale(window->renderer, SDL_TRUE);
-// 	window->screen_surface = SDL_CreateRGBSurfaceWithFormat(0, size_x, size_y, 32, SDL_PIXELFORMAT_RGB888);
-
-// 	return 1;
-// }
-
-// void render_window(window_t* window)
-// {
-// 	SDL_RenderClear(window->renderer);
-// 	SDL_Texture* render_tex = SDL_CreateTextureFromSurface(window->renderer, window->screen_surface);
-// 	SDL_RenderCopy(window->renderer, render_tex, NULL, NULL);
-// 	SDL_DestroyTexture(render_tex);
-// 	SDL_RenderPresent(window->renderer);
-// }
-
-void close_app()
+void save_sram()
 {
-	if (cartridge.battery)	// dump external ram to save file
+	if (!cartridge.battery)
+		return;
+
+	if (!ensure_dir("./saves"))
 	{
-		int fd = open(emulator.save_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-		if (fd != -1)
-		{
-			int size = 0;
-			switch (cartridge.ram_size)
-			{
-			case 0x00:
-				size = 0x2000;
-				break;
-			case 0x02:
-				size = 0x2000;
-				break;
-			case 0x03:
-				size = 0x8000;
-				break;
-			case 0x04:
-				size = 0x20000;
-				break;
-			case 0x05:
-				size = 0x10000;
-				break;
-			}
-			write(fd, cartridge.ram, size);
-			close(fd);
-		}
-		else
-			perror(emulator.save_file_path);
+		perror("./saves");
+		return;
 	}
 
-	// SDL_DestroyRenderer(emulator.window_tiles.renderer);
-	// SDL_DestroyWindow(emulator.window_tiles.window);
+	int fd = open(emulator.save_file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	if (fd != -1)
+	{
+		int size = 0;
+		switch (cartridge.ram_size)
+		{
+		case 0x00:
+			size = 0x2000;
+			break;
+		case 0x02:
+			size = 0x2000;
+			break;
+		case 0x03:
+			size = 0x8000;
+			break;
+		case 0x04:
+			size = 0x20000;
+			break;
+		case 0x05:
+			size = 0x10000;
+			break;
+		}
+		write(fd, cartridge.ram, size);
+		close(fd);
+	}
+	else
+		perror(emulator.save_file_path);
+	
+}
 
-	// SDL_DestroyRenderer(emulator.window_background9800.renderer);
-	// SDL_DestroyWindow(emulator.window_background9800.window);
+void free_ptr(void* ptr)
+{
+	if (ptr)
+	{
+		free(ptr);
+		ptr = NULL;
+	}
+}
 
-	// SDL_DestroyRenderer(emulator.window_background9C00.renderer);
-	// SDL_DestroyWindow(emulator.window_background9C00.window);
-
-	// SDL_DestroyRenderer(emulator.window_screen.renderer);
-	// SDL_DestroyWindow(emulator.window_screen.window);
-
-	// SDL_Quit();
+void close_rom()
+{
+	save_sram();
+	free_ptr(cartridge.rom);
+	free_ptr(cartridge.mbc);
+	free_ptr(cartridge.ram);
 }
 
 int run_emulator()

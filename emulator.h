@@ -6,6 +6,7 @@
 # include <fcntl.h>
 # include <SDL2/SDL.h>
 # include <libgen.h>
+# include <sys/stat.h>
 # include <errno.h>
 # include "cartridge.h"
 # include "memory.h"
@@ -36,6 +37,7 @@ typedef struct
 	int quit;
 	int fforward;
 	char* rom_file_name;
+	char rom_file_path[1024];
 	char save_file_path[1024];
 
 	window_t window_screen;
@@ -56,15 +58,21 @@ extern emulator_t emulator;
 # define WIN_SCREEN_SIZE_X 160
 # define WIN_SCREEN_SIZE_Y 144
 
-int init_app();
+int load_rom(const char* path);
+
+int ensure_dir(const char* path);
 
 int load_sram();
+
+void save_sram();
 
 int init_window(window_t* window, char* title, int size_x, int size_y);
 
 void render_window(window_t* window);
 
-void close_app();
+void free_ptr(void* ptr);
+
+void close_rom();
 
 int run_emulator();
 
