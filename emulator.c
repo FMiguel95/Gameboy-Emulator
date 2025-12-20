@@ -83,7 +83,7 @@ int load_sram()
 		switch (cartridge.ram_size)
 		{
 		case 0x00:
-			size = 0x2000;
+			size = 0x200;
 			break;
 		case 0x02:
 			size = 0x2000;
@@ -124,7 +124,7 @@ void save_sram()
 		switch (cartridge.ram_size)
 		{
 		case 0x00:
-			size = 0x2000;
+			size = 0x200;
 			break;
 		case 0x02:
 			size = 0x2000;
