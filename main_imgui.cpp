@@ -384,7 +384,7 @@ int main(int ac, char** av)
 		return 1;
 
 	// Setup SDL
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD))
 	{
 		printf("Error: SDL_Init(): %s\n", SDL_GetError());
 		return 1;

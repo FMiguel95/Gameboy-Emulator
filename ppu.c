@@ -90,7 +90,7 @@ void ppu_tick()
 			ppu.pixel_buffer_private = ppu.pixel_buffer_public;
 			ppu.pixel_buffer_public = temp;
 
-			memset(ppu.pixel_buffer_private, 0, 23040 * sizeof(int)); // screen tearing testing...
+			// memset(ppu.pixel_buffer_private, 0, 23040 * sizeof(int)); // screen tearing testing...
 		}
 		// else if (*ppu.ly == 154) // end of frame
 		// 	*ppu.ly = 0;

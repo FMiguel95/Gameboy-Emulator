@@ -14,6 +14,7 @@
 # include "timers.h"
 # include "cpu.h"
 # include "ppu.h"
+# include "apu.h"
 # include "object.h"
 # include "joypad.h"
 

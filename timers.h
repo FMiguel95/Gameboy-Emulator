@@ -10,16 +10,15 @@ extern "C" {
 
 typedef struct {
 	u8* div;	// Divider register
+	u8 div_prev;
 	u16 div_counter;
 
 	u8* tima;	// Timer counter
 
 	u8* tma;	// Timer modulo
-	
 
 	u8* tac;	// Timer control
 	
-
 } timers_t;
 
 extern timers_t timers;

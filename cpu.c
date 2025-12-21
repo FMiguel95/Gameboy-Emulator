@@ -47,8 +47,10 @@ void cpu_log()
 
 void cpu_tick()
 {
-	// memory_t* mem = &memory;
-	// cpu_t* ccpu = &cpu;
+	if (cpu.IME_set_request == 1)	// EI instruction delay
+		cpu.IME = 1;
+	if (cpu.IME_set_request)
+		cpu.IME_set_request--;
 
 	if (cpu.halt_mode)
 	{
@@ -74,11 +76,6 @@ void cpu_tick()
 			cpu.instruction_to_execute = CB_set[cpu.loaded_opcode];
 			cpu.prefix_instruction = 0;
 		}
-
-		if (cpu.IME_set_request == 1)	// EI instruction delay
-			cpu.IME = 1;
-		if (cpu.IME_set_request)
-			cpu.IME_set_request--;
 	}
 	cpu.instruction_to_execute();
 
