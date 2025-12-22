@@ -14,9 +14,12 @@ INCLUDES = -I. -Iimgui
 # Compiler / Linker
 CC      = gcc
 CXX     = g++
-CFLAGS  = -O2 $(INCLUDES) -g
-CXXFLAGS = -O2 $(INCLUDES) -g
+CFLAGS  = -O3 $(INCLUDES) -g
+CXXFLAGS = -O3 $(INCLUDES) -g
 LDFLAGS = -lSDL3
+# CFLAGS   = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)
+# CXXFLAGS = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)
+# LDFLAGS  = -lSDL3 -flto -lstdc++
 
 # Add ImGui dependencies
 LDFLAGS += -lstdc++

@@ -13,7 +13,7 @@ int load_rom(const char* path)
 		return 0;
 	if (!init_memory())
 		return 0;
-	emulator.rom_file_name = basename(path);
+	emulator.rom_file_name = basename((char*)path);
 	if (!load_sram())
 		return 0;
 	if (!init_tiles())
@@ -199,6 +199,9 @@ void run_clock(int n_cycles)
 	{
 		timers_tick();
 		cpu_tick();
+		ppu_tick();
+		ppu_tick();
+		ppu_tick();
 		ppu_tick();
 		apu_tick();
 	}

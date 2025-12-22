@@ -6,6 +6,7 @@
 # include "object.h"
 # include "memory.h"
 # include "cpu.h"
+# include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,7 @@ typedef struct {
 	int line_153_glitch;
 	int booted;
 	ppu_mode current_mode;
+	int mode3_delay;
 
 	int stat_state;
 	int prev_stat_state;
@@ -101,6 +103,8 @@ ppu_mode ppu_get_mode();
 int is_stat(u8 stat);
 
 void oam_scan();
+
+void set_mode3_delay();
 
 void draw_scanline();
 

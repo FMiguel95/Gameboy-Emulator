@@ -19,9 +19,9 @@ void write8(u16 address, u8 val)
 		cartridge.mbc->write_mbc(address, val);
 	else if (address < 0xA000)
 	{
-		// u8 ppu_mode = read8(STAT) & 0b11;
-		// u8 lcdc = read8(LCDC);
-		// if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
+		u8 ppu_mode = read8(STAT) & 0b11;
+		u8 lcdc = read8(LCDC);
+		if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
 			memory.video_ram[address - 0x8000] = val;
 	}
 	else if (address < 0xC000)

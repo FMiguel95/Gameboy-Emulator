@@ -30,8 +30,9 @@ int init_ppu()
 void ppu_tick()
 {
 	ppu.prev_stat_state = ppu.stat_state;
-	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
+	if (ppu.booted && get_flag(*ppu.lcdc, LCDC_7) == 0)
 	{
+		memset(ppu.pixel_buffer_public, 0xFF, 23040 * sizeof(int));
 		ppu.booted = 0;
 		*ppu.ly = 0;
 		ppu.scanline_cycle = 0;
@@ -43,7 +44,7 @@ void ppu_tick()
 	}
 	ppu.stat_state = 0;
 
-	if (*ppu.ly == 153 && ppu.scanline_cycle == 2)	// ly 153 will show as 0 for most of the line
+	if (*ppu.ly == 153 && ppu.scanline_cycle == 8)	// ly 153 will show as 0 for most of the line
 	{
 		*ppu.ly = 0;
 		ppu.line_153_glitch = 1;
@@ -59,16 +60,17 @@ void ppu_tick()
 			ppu.current_mode = OAM_scan;
 			oam_scan();
 		}
-		else if (ppu.scanline_cycle == 20)
+		else if (ppu.scanline_cycle == 80)
 		{
+			set_mode3_delay();
 			ppu.current_mode = draw;
 			draw_scanline();
 		}
-		else if (ppu.scanline_cycle == 73)
+		else if (ppu.scanline_cycle == 252 + ppu.mode3_delay)
 			ppu.current_mode = h_blank;
 	}
 
-	if (ppu.scanline_cycle == 113) // end of scanline
+	if (ppu.scanline_cycle == 455) // end of scanline
 	{
 		ppu.scanline_cycle = -1;
 		if (!ppu.line_153_glitch)
@@ -92,7 +94,7 @@ void ppu_tick()
 			ppu.pixel_buffer_private = ppu.pixel_buffer_public;
 			ppu.pixel_buffer_public = temp;
 
-			// memset(ppu.pixel_buffer_private, 0, 23040 * sizeof(int)); // screen tearing testing...
+			memset(ppu.pixel_buffer_private, 0, 23040 * sizeof(int)); // screen tearing testing...
 		}
 		// else if (*ppu.ly == 154) // end of frame
 		// 	*ppu.ly = 0;
@@ -148,6 +150,34 @@ int is_stat(u8 stat)
 	}
 	// printf("no stat irq\n");
 	return 0;
+}
+
+void set_mode3_delay()
+{
+	int blocks[20] = {0};
+
+	for (int i = 0; i < 10; i++)
+	{
+		int x0 = ppu.scanline_objects[i].x_pos - 8;
+		int x1 = x0 + 7;
+
+		if (x1 < 0 || x0 >= 160)
+			continue;
+
+		if (x0 < 0)
+			x0 = 0;
+		if (x1 > 159)
+			x1 = 159;
+
+		for (int j = x0 / 8; j <= x1 / 8; j++)
+			blocks[j] = 1;
+	}
+	
+	int ret = 0;
+	for (int i = 0; i < 20; i++)
+		ret += (blocks[i] * 6);
+
+	ppu.mode3_delay = ret;
 }
 
 void oam_scan()

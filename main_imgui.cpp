@@ -179,11 +179,46 @@ void imgui_screen(SDL_Texture* tex_screen, SDL_Texture* tex_screen_next)
 	ImGui::End();
 }
 
+void imgui_fullscreen(SDL_Texture* tex_screen)
+{
+	ImGui::Begin("Full Screen");
+
+	ImVec2 avail = ImGui::GetContentRegionAvail();
+
+	float tex_aspect = (float)WIN_SCREEN_SIZE_X / (float)WIN_SCREEN_SIZE_Y;
+	float avail_aspect = avail.x / avail.y;
+
+	ImVec2 size;
+	if (avail_aspect > tex_aspect)
+	{
+		size.y = avail.y;
+		size.x = size.y * tex_aspect;
+	}
+	else
+	{
+		size.x = avail.x;
+		size.y = size.x / tex_aspect;
+	}
+
+	ImGui::SetCursorPos(ImVec2(
+		(avail.x - size.x) * 0.5f,
+		(avail.y - size.y) * 0.5f
+	));
+
+	SDL_UpdateTexture(tex_screen, nullptr,
+					ppu.pixel_buffer_public,
+					WIN_SCREEN_SIZE_X * 4);
+
+	ImGui::Image((ImTextureID)tex_screen, size);
+
+	ImGui::End();
+}
+
 void imgui_ppu()
 {
 	if (ImGui::Begin("PPU"))
 	{
-		ImGui::Text("Dots: %03d/455", ppu.scanline_cycle * 4);
+		ImGui::Text("Dots: %03d/455", ppu.scanline_cycle);
 		ImGui::Text("Line: %03d/153", *ppu.ly);
 		ImGui::Text("Scroll: %03d,%03d", *ppu.scx, *ppu.scy);
 		ImGui::Text("Window: %03d,%03d", *ppu.wx, *ppu.wy);
@@ -410,7 +445,9 @@ int main(int ac, char** av)
 	SDL_ShowWindow(window);
 
 	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_SetTextureScaleMode(tex_screen, SDL_SCALEMODE_NEAREST);
 	SDL_Texture* tex_screen_next = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_SetTextureScaleMode(tex_screen_next, SDL_SCALEMODE_NEAREST);
 	SDL_Texture* tex_vram = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
@@ -438,11 +475,9 @@ int main(int ac, char** av)
 
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	// emulator.paused = 1;
+	bool fullscreen = false;
 	while (!emulator.quit)
 	{
-		if (ppu.pixel_buffer_private == ppu.pixel_buffer_public)
-			printf("wtf\n");
 		long start_time = get_current_time();
 
 		SDL_Event event;
@@ -482,7 +517,13 @@ int main(int ac, char** av)
 					emulator.fforward = 1;
 				if (key == SDLK_R)
 					reset();
-
+				if (key == SDLK_B)
+					emulator.request_cycle = 1;
+				if (key == SDLK_N)
+					emulator.request_scanline = 1;
+				if (key == SDLK_M)
+					emulator.request_frame = 1;
+				
 			}
 
 			// on key up
@@ -509,6 +550,8 @@ int main(int ac, char** av)
 
 				if (key == SDLK_SPACE)
 					emulator.fforward = 0;
+				if (key == SDLK_F)
+					fullscreen = !fullscreen;
 			}
 
 		}
@@ -540,14 +583,21 @@ int main(int ac, char** av)
 		ImGui::NewFrame();
 		ImGui::DockSpaceOverViewport();
 
-		imgui_menubar();
-		imgui_cpu();
-		imgui_timers();
-		imgui_screen(tex_screen, tex_screen_next);
-		imgui_ppu();
-		imgui_vram(tex_vram);
-		imgui_maps(tex_map9800, tex_map9C00);
-		imgui_buttons();
+		if (!fullscreen)
+		{
+			imgui_menubar();
+			imgui_cpu();
+			imgui_timers();
+			imgui_screen(tex_screen, tex_screen_next);
+			imgui_ppu();
+			imgui_vram(tex_vram);
+			imgui_maps(tex_map9800, tex_map9C00);
+			imgui_buttons();
+		}
+		else
+		{
+			imgui_fullscreen(tex_screen);
+		}
 
 		// Rendering
 		ImGui::Render();
