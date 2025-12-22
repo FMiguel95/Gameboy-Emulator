@@ -34,7 +34,7 @@ void ppu_tick()
 	{
 		ppu.booted = 0;
 		*ppu.ly = 0;
-		ppu.scanline_cycle = -1;
+		ppu.scanline_cycle = 0;
 		ppu_set_mode(0);
 		ppu.window_line_counter = -1;
 		ppu.wy_equaled_ly = 0;
@@ -43,7 +43,6 @@ void ppu_tick()
 	}
 	ppu.stat_state = 0;
 
-	ppu.scanline_cycle++;
 	if (*ppu.ly == 153 && ppu.scanline_cycle == 2)	// ly 153 will show as 0 for most of the line
 	{
 		*ppu.ly = 0;
@@ -57,16 +56,16 @@ void ppu_tick()
 	{
 		if (ppu.scanline_cycle == 0 && ppu.booted)
 		{
-			ppu_set_mode(OAM_scan);
+			ppu.current_mode = OAM_scan;
 			oam_scan();
 		}
 		else if (ppu.scanline_cycle == 20)
 		{
-			ppu_set_mode(draw);
+			ppu.current_mode = draw;
 			draw_scanline();
 		}
 		else if (ppu.scanline_cycle == 73)
-			ppu_set_mode(h_blank);
+			ppu.current_mode = h_blank;
 	}
 
 	if (ppu.scanline_cycle == 113) // end of scanline
@@ -78,7 +77,8 @@ void ppu_tick()
 		ppu.booted = 1;
 		if (*ppu.ly == 144)
 		{
-			ppu_set_mode(v_blank);
+			// ppu_set_mode(v_blank);
+			ppu.current_mode = v_blank;
 			// request v-blank interrupt
 			u8 IF_val = read8(IF);
 			set_flag(&IF_val, VBlank, 1);
@@ -98,6 +98,7 @@ void ppu_tick()
 		// 	*ppu.ly = 0;
 	}
 
+	ppu_set_mode(ppu.current_mode);
 	set_flag(ppu.stat, STAT_2, *ppu.lyc == *ppu.ly);
 	ppu.stat_state = is_stat(*ppu.stat);
 	if (!ppu.prev_stat_state && ppu.stat_state)
@@ -107,6 +108,7 @@ void ppu_tick()
 		write8(IF, IF_val);
 		// printf("STAT irq line: %d\n", *ppu.ly);
 	}
+	ppu.scanline_cycle++;
 }
 
 void ppu_set_mode(ppu_mode mode)

@@ -11,6 +11,13 @@
 extern "C" {
 #endif
 
+typedef enum {
+	h_blank	 = 0b00,
+	v_blank	 = 0b01,
+	OAM_scan = 0b10,
+	draw	 = 0b11
+} ppu_mode;
+
 typedef struct {
 	u8* lcdc;	// LCD Control
 	u8* stat;	// LCD status
@@ -33,6 +40,7 @@ typedef struct {
 	int wy_equaled_ly;
 	int line_153_glitch;
 	int booted;
+	ppu_mode current_mode;
 
 	int stat_state;
 	int prev_stat_state;
@@ -75,13 +83,6 @@ typedef enum {
 	STAT_5,	// Mode 2 int select R/W
 	STAT_6,	// LYC int select R/W
 } STAT_bit;
-
-typedef enum {
-	h_blank	 = 0b00,
-	v_blank	 = 0b01,
-	OAM_scan = 0b10,
-	draw	 = 0b11
-} ppu_mode;
 
 int init_ppu();
 
