@@ -1,5 +1,5 @@
-#ifndef CPU_H
-# define CPU_H
+#ifndef APU_H
+# define APU_H
 
 # include "types.h"
 # include "memory.h"
@@ -51,13 +51,6 @@ typedef struct {
 } apu_t;
 
 extern apu_t apu;
-
-int duty_cycles[4][8] = {
-	{ 1, 1, 1, 1, 1, 1, 1, 0 },
-	{ 0, 1, 1, 1, 1, 1, 1, 0 },
-	{ 0, 1, 1, 1, 1, 0, 0, 0 },
-	{ 1, 0, 0, 0, 0, 0, 0, 1 }
-};
 
 int init_ppu();
 

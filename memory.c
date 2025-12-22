@@ -124,7 +124,11 @@ u8 read8(u16 address)
 	else if (address < 0xFF00)
 		return memory.unused[address - 0xFEA0];
 	else if (address < 0xFF80)
+	{
+		if (address == STAT)
+			return memory.io_registers[address - 0xFF00] | 0b10000000;
 		return memory.io_registers[address - 0xFF00];
+	}
 	else if (address < 0xFFFF)
 		return memory.high_ram[address - 0xFF80];
 	else

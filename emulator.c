@@ -200,6 +200,7 @@ void run_clock(int n_cycles)
 		timers_tick();
 		cpu_tick();
 		ppu_tick();
+		apu_tick();
 	}
 }
 

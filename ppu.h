@@ -32,6 +32,7 @@ typedef struct {
 	int window_line_counter;
 	int wy_equaled_ly;
 	int line_153_glitch;
+	int booted;
 
 	int stat_state;
 	int prev_stat_state;

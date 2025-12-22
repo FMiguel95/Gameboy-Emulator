@@ -30,9 +30,9 @@ int init_ppu()
 void ppu_tick()
 {
 	ppu.prev_stat_state = ppu.stat_state;
-	ppu.stat_state = 0;
 	if (get_flag(*ppu.lcdc, LCDC_7) == 0)
 	{
+		ppu.booted = 0;
 		*ppu.ly = 0;
 		ppu.scanline_cycle = -1;
 		ppu_set_mode(0);
@@ -41,6 +41,7 @@ void ppu_tick()
 		ppu.line_153_glitch = 0;
 		return;
 	}
+	ppu.stat_state = 0;
 
 	ppu.scanline_cycle++;
 	if (*ppu.ly == 153 && ppu.scanline_cycle == 2)	// ly 153 will show as 0 for most of the line
@@ -54,7 +55,7 @@ void ppu_tick()
 
 	if (*ppu.ly < 144 && !ppu.line_153_glitch)
 	{
-		if (ppu.scanline_cycle == 0)
+		if (ppu.scanline_cycle == 0 && ppu.booted)
 		{
 			ppu_set_mode(OAM_scan);
 			oam_scan();
@@ -74,6 +75,7 @@ void ppu_tick()
 		if (!ppu.line_153_glitch)
 			(*ppu.ly)++;
 		ppu.line_153_glitch = 0;
+		ppu.booted = 1;
 		if (*ppu.ly == 144)
 		{
 			ppu_set_mode(v_blank);
