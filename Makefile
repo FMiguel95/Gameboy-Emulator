@@ -12,14 +12,15 @@ OBJS = $(C_SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)
 INCLUDES = -I. -Iimgui
 
 # Compiler / Linker
-CC      = gcc
-CXX     = g++
-CFLAGS  = -O3 $(INCLUDES) -g
+CC       = gcc
+CXX      = g++
+CFLAGS   = -O3 $(INCLUDES) -g
 CXXFLAGS = -O3 $(INCLUDES) -g
-LDFLAGS = -lSDL3
+LDFLAGS  = -lSDL3 -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN/lib'
+
 # CFLAGS   = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)
 # CXXFLAGS = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)
-# LDFLAGS  = -lSDL3 -flto -lstdc++
+# LDFLAGS  = -lSDL3 -flto -lstdc++ -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN/lib'
 
 # Add ImGui dependencies
 LDFLAGS += -lstdc++
