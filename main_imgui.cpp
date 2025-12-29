@@ -21,22 +21,36 @@ void imgui_menubar()
 			if (ImGui::MenuItem("Load ROM...")) {}
 			if (ImGui::MenuItem("Save State", nullptr, false, false)) {}
 			if (ImGui::MenuItem("Load State", nullptr, false, false)) {}
-			if (ImGui::MenuItem("Exit")) { emulator.quit = 1; }
+			if (ImGui::MenuItem("Exit", "Esc")) { emulator.quit = 1; }
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Emulation"))
 		{
-			if (ImGui::MenuItem("Fast Forward", "Space")) {}
-			if (ImGui::MenuItem("Pause", "P")) {}
+			if (ImGui::MenuItem("Pause", "P"))
+			{
+				emulator.paused = !emulator.paused;
+			}
 			if (ImGui::MenuItem("Reset", "R"))
 			{
 				reset();
 			}
-			if (ImGui::MenuItem("Stop")) {}
+			if (ImGui::MenuItem("Stop"))
+			{
+
+			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Cut", "Ctrl+X")) {}
-			if (ImGui::MenuItem("Copy", "Ctrl+C")) {}
-			if (ImGui::MenuItem("Paste", "Ctrl+V")) {}
+			if (ImGui::MenuItem("Step Cycle", "B"))
+			{
+				emulator.request_cycle = 1;
+			}
+			if (ImGui::MenuItem("Step Scanline", "N"))
+			{
+				emulator.request_scanline = 1;
+			}
+			if (ImGui::MenuItem("Step Frame", "M"))
+			{
+				emulator.request_frame = 1;
+			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -511,6 +525,8 @@ int main(int ac, char** av)
 				if (key == SDLK_BACKSPACE)
 					press_key(KEY_SELECT);
 
+				if (key == SDLK_ESCAPE)
+					emulator.quit = 1;
 				if (key == SDLK_P)
 					emulator.paused = !emulator.paused;
 				if (key == SDLK_SPACE)
@@ -592,7 +608,7 @@ int main(int ac, char** av)
 			imgui_ppu();
 			imgui_vram(tex_vram);
 			imgui_maps(tex_map9800, tex_map9C00);
-			imgui_buttons();
+			// imgui_buttons();
 		}
 		else
 		{

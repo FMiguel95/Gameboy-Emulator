@@ -206,7 +206,6 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 
 	if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
 	{
-		// printf("ly:%d\n", *ppu.ly);
 		if (!*has_window)
 		{
 			*has_window = 1;

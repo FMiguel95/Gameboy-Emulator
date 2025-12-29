@@ -1,12 +1,15 @@
 # --- Project Setup ---
 TARGET = emulator
 
-# C and C++ sources
-C_SRCS   = $(wildcard *.c)
-CPP_SRCS = $(wildcard *.cpp) $(wildcard imgui/*.cpp)
+# Sources
+C_SRCS      = $(wildcard *.c)
+CPP_SRCS    = $(wildcard *.cpp)
+IMGUI_SRCS  = $(wildcard imgui/*.cpp)
 
-# Object files
-OBJS = $(C_SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)
+# Objects
+OBJS       = $(C_SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)
+IMGUI_OBJS = $(IMGUI_SRCS:.cpp=.o)
+ALL_OBJS   = $(OBJS) $(IMGUI_OBJS)
 
 # Include paths
 INCLUDES = -I. -Iimgui
@@ -29,8 +32,8 @@ LDFLAGS += -lstdc++
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
+$(TARGET): $(ALL_OBJS)
+	$(CXX) $(ALL_OBJS) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -40,6 +43,9 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
+
+fclean:
+	rm -f $(ALL_OBJS) $(TARGET)
 
 run: $(TARGET)
 	./$(TARGET)
