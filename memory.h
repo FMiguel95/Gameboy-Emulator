@@ -4,6 +4,7 @@
 # include "types.h"
 # include "cartridge.h"
 # include "timers.h"
+# include "apu.h"
 # include "joypad.h"
 
 #ifdef __cplusplus

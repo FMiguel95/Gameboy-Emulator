@@ -31,6 +31,12 @@ typedef struct {
 	u8* nr22;		// Channel 2 volume & envelope
 	u8* nr23;		// Channel 2 period low [write-only]
 	u8* nr24;		// Channel 2 period high & control
+	int ch2_request_trigger;
+	int ch2_length_timer;
+	int ch2_period_divider;
+	int ch2_duty_pos;
+	int ch2_current_volume;
+	int ch2_envelope_timer;
 
 	// Sound Channel 3 — Wave output
 	u8* nr30;		// Channel 3 DAC enable
@@ -52,7 +58,7 @@ typedef struct {
 
 extern apu_t apu;
 
-int init_ppu();
+int init_apu();
 
 void apu_tick();
 
