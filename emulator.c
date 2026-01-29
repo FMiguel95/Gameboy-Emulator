@@ -26,6 +26,8 @@ int load_rom(const char* path)
 		return 0;
 	if (!init_ppu())
 		return 0;
+	if ((!init_apu()))
+		return 0;
 
 	emulator.paused = 0;
 	emulator.quit = 0;
@@ -198,11 +200,14 @@ void run_clock(int n_cycles)
 	for (size_t i = 0; i < n_cycles; i++)
 	{
 		timers_tick();
+
 		cpu_tick();
+		
 		ppu_tick();
 		ppu_tick();
 		ppu_tick();
 		ppu_tick();
+		
 		apu_tick();
 	}
 }

@@ -310,6 +310,92 @@ void imgui_ppu()
 	ImGui::End();
 }
 
+void imgui_apu()
+{
+	if (ImGui::Begin("APU"))
+	{
+		u8 reg_NR52 = read8_absolute(NR52);
+		bool nr52_0 = get_flag(reg_NR52, NR52_0);
+		bool nr52_1 = get_flag(reg_NR52, NR52_1);
+		bool nr52_2 = get_flag(reg_NR52, NR52_2);
+		bool nr52_3 = get_flag(reg_NR52, NR52_3);
+		bool nr52_7 = get_flag(reg_NR52, NR52_7);
+
+		ImGui::Checkbox("APU Enable", &nr52_7);
+		ImGui::Text("APU DIV: %.2X", apu.div_apu);
+		ImGui::SeparatorText("Channel 1");
+		ImGui::Checkbox("Enable###ch1", &nr52_0);
+
+		// u8 reg_NR11 = read8_absolute(NR11);
+		// u8 reg_NR12 = read8_absolute(NR12);
+		// u8 reg_NR13 = read8_absolute(NR13);
+		// u8 reg_NR14 = read8_absolute(NR14);
+		// ImGui::Text("Wave Duty: %d", reg_NR11 >> 6);
+		// bool nr14_6 = get_flag(reg_NR14, 6);
+		// ImGui::Checkbox("Length enable###ch1length", &nr14_6);
+		// set_flag(&reg_NR14, 6, nr14_6);
+		// ImGui::Text("Initial length timer: %d", reg_NR11 & 0b00111111);
+		// ImGui::SameLine();
+		// ImGui::Text("Current: %d", apu.ch1_length_timer);
+		// ImGui::Text("Initial volume: %d", reg_NR12 >> 4);
+		// ImGui::SameLine();
+		// ImGui::Text("Current: %d", apu.ch1_current_volume);
+		// const char* ch1EnvDir = (reg_NR12 & 0b0000100) ? "increase" : "decrease";
+		// ImGui::Text("Env direction: %s", ch1EnvDir);
+		// ImGui::Text("Sweep pace: %d", reg_NR12 & 0b111);
+		// ImGui::Text("Period value: %d", ((int)(reg_NR14 & 0b111) << 8) | reg_NR13);
+		// ImGui::Checkbox("Trigger###ch1trigger", (bool*)&apu.ch1_request_trigger);
+		// write8_absolute(NR14, reg_NR14);
+
+
+		ImGui::SeparatorText("Channel 2");
+		ImGui::Checkbox("Enable###ch2", &nr52_1);
+
+		u8 reg_NR21 = read8_absolute(NR21);
+		u8 reg_NR22 = read8_absolute(NR22);
+		u8 reg_NR23 = read8_absolute(NR23);
+		u8 reg_NR24 = read8_absolute(NR24);
+		ImGui::Text("Wave Duty: %d", reg_NR21 >> 6);
+		bool nr24_6 = get_flag(reg_NR24, NR24_6);
+		ImGui::Checkbox("Length enable###ch2length", &nr24_6);
+		set_flag(&reg_NR24, NR24_6, nr24_6);
+		ImGui::Text("Initial length timer: %d", reg_NR21 & 0b00111111);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch2_length_timer);
+		ImGui::Text("Initial volume: %d", reg_NR22 >> 4);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch2_current_volume);
+		const char* ch2EnvDir = (reg_NR22 & 0b0000100) ? "increase" : "decrease";
+		ImGui::Text("Env direction: %s", ch2EnvDir);
+		ImGui::Text("Sweep pace: %d", reg_NR22 & 0b111);
+		ImGui::Text("Period value: %d", ((int)(reg_NR24 & 0b111) << 8) | reg_NR23);
+		ImGui::Checkbox("Trigger###ch2trigger", (bool*)&apu.ch2_request_trigger);
+		write8_absolute(NR24, reg_NR24);
+
+		// bool nr21_0 = get_flag(reg_NR21, NR21_0);
+		// bool nr21_1 = get_flag(reg_NR21, NR21_1);
+		// bool nr21_2 = get_flag(reg_NR21, NR21_2);
+		// bool nr21_3 = get_flag(reg_NR21, NR21_3);
+		// bool nr21_4 = get_flag(reg_NR21, NR21_4);
+		// bool nr21_5 = get_flag(reg_NR21, NR21_5);
+		// bool nr21_6 = get_flag(reg_NR21, NR21_6);
+		// bool nr21_7 = get_flag(reg_NR21, NR21_7);
+
+		ImGui::SeparatorText("Channel 3");
+		ImGui::Checkbox("Enable###ch3", &nr52_2);
+		ImGui::SeparatorText("Channel 4");
+		ImGui::Checkbox("Enable###ch4", &nr52_3);
+
+		set_flag(&reg_NR52, NR52_0, nr52_0);
+		set_flag(&reg_NR52, NR52_1, nr52_1);
+		set_flag(&reg_NR52, NR52_2, nr52_2);
+		set_flag(&reg_NR52, NR52_3, nr52_3);
+		set_flag(&reg_NR52, NR52_7, nr52_7);
+		write8_absolute(NR52, reg_NR52);
+	}
+	ImGui::End();
+}
+
 void imgui_vram(SDL_Texture* tex_vram)
 {
 	int tex_vram_pixels[WIN_VRAM_SIZE_X * WIN_VRAM_SIZE_Y];
@@ -607,6 +693,7 @@ int main(int ac, char** av)
 			imgui_timers();
 			imgui_screen(tex_screen, tex_screen_next);
 			imgui_ppu();
+			imgui_apu();
 			imgui_vram(tex_vram);
 			imgui_maps(tex_map9800, tex_map9C00);
 			// imgui_buttons();

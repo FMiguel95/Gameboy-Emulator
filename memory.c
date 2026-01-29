@@ -36,7 +36,9 @@ void write8(u16 address, u8 val)
 			val = 0;
 			timers.div_counter = 0;
 		}
-		else if (address == NR24 && (val & 0b10000000) == 1)
+		else if (address == NR14 && get_flag(val, NR14_7))
+			apu.ch1_request_trigger = 1;
+		else if (address == NR24 && get_flag(val, NR24_7))
 			apu.ch2_request_trigger = 1;
 		else if (address == DMA)
 			return oam_dma_transfer(val);
