@@ -46,7 +46,12 @@ int init_apu()
 
 int ch1_digital_output()
 {
-	return 0;
+	if (!get_flag(*apu.nr52, NR52_0))
+		return 0;
+	
+	int wave_duty = *apu.nr21 >> 6;
+	int val = duty_cycles[wave_duty][apu.ch1_duty_pos] * apu.ch1_current_volume;
+	return val;
 }
 
 int ch2_digital_output()
@@ -61,60 +66,66 @@ int ch2_digital_output()
 
 void ch1_tick()
 {
-	// if (apu.ch1_request_trigger) // trigger channel
-	// {
-	// 	apu.ch1_request_trigger = 0;
-	// 	// enable ch1
-	// 	set_flag(apu.nr52, NR52_0, 1);
-	// 	// reset length timer if expired
-	// 	if (apu.ch1_length_timer > 0)
-	// 		apu.ch1_length_timer = 64 - (*apu.nr11 & 0b111111);
-	// 	// set period divider to the contents of NR13 and NR14
-	// 	apu.ch1_period_divider = ((int)(*apu.nr14 & 0b111) << 8) | *apu.nr13;
-	// 	// reset envelop timer
-	// 	apu.ch1_envelope_timer = *apu.nr12 & 0b111;
-	// 	// volume is set to contents of NR12 initial volume
-	// 	apu.ch1_current_volume = (*apu.nr12 >> 4) & 0b1111;
-	// }
+	if (apu.ch1_request_trigger) // trigger channel
+	{
+		apu.ch1_request_trigger = 0;
+		// enable ch1
+		set_flag(apu.nr52, NR52_0, 1);
+		// reset length timer if expired
+		if (apu.ch1_length_timer > 0)
+			apu.ch1_length_timer = 64 - (*apu.nr11 & 0b111111);
+		// set period divider to the contents of nr13 and nr14
+		apu.ch1_period_divider = ((int)(*apu.nr14 & 0b111) << 8) | *apu.nr13;
+		// reset envelop timer
+		apu.ch1_envelope_timer = *apu.nr12 & 0b111;
+		// volume is set to contents of nr12 initial volume
+		apu.ch1_current_volume = (*apu.nr12 >> 4) & 0b1111;
+	}
 
-	// if (!get_flag(*apu.nr52, NR52_0))
-	// 	return;
+	if (*apu.nr12 & 0b11111000 == 0) // disable channel if initial volume and env is set to 0
+		set_flag(apu.nr52, NR52_0, 0);
 
-	// apu.ch1_period_divider++;
-	// if (apu.ch1_period_divider > 0x7FF)
-	// {
-	// 	apu.ch1_period_divider = ((int)(*apu.nr14 & 0b111) << 8) | *apu.nr13;
-	// 	apu.ch1_duty_pos = (apu.ch1_duty_pos + 1) & 7;
-	// }
+	if (!get_flag(*apu.nr52, NR52_0))
+		return;
 
-	// if (apu.div_apu % 2 == 0) // 256 Hz sound length
-	// {
-	// 	if (apu.ch1_length_timer > 0 && get_flag(*apu.nr14, NR14_6))
-	// 	{
-	// 		apu.ch1_length_timer--;
-	// 		if (apu.ch1_length_timer == 0)
-	// 		{
-	// 			set_flag(apu.nr52, NR52_0, 0);
-	// 			return;
-	// 		}
-	// 	}
-	// }
+	apu.ch1_period_divider++;
+	if (apu.ch1_period_divider > 0x7FF)
+	{
+		apu.ch1_period_divider = ((int)(*apu.nr14 & 0b111) << 8) | *apu.nr13;
+		apu.ch1_duty_pos = (apu.ch1_duty_pos + 1) & 7;
+	}
 
-	// int ch1_sweep_pace = *apu.nr12 & 0b111;
-	// if (apu.div_apu % 8 == 0 && ch1_sweep_pace > 0) // 64 Hz envelope sweep
-	// {
-	// 	apu.ch1_envelope_timer--;
-	// 	if (apu.ch1_envelope_timer == 0)
-	// 	{
-	// 		apu.ch1_envelope_timer = ch1_sweep_pace;
-	// 		int dir = get_flag(*apu.nr12, NR12_3) ? 1 : -1;
-	// 		apu.ch1_current_volume += dir;
-	// 		if (apu.ch1_current_volume < 0x0)
-	// 			apu.ch1_current_volume = 0x0;
-	// 		else if (apu.ch1_current_volume > 0xF)
-	// 			apu.ch1_current_volume = 0xF;
-	// 	}
-	// }
+	if (!apu.div_apu_ticked)
+		return;
+
+	if (apu.div_apu % 2 == 0) // 256 Hz sound length
+	{
+		if (apu.ch1_length_timer > 0 && get_flag(*apu.nr14, NR14_6))
+		{
+			apu.ch1_length_timer--;
+			if (apu.ch1_length_timer == 0) // channel disables itself after length timer expires
+			{
+				set_flag(apu.nr52, NR52_0, 0);
+				return;
+			}
+		}
+	}
+
+	int ch1_sweep_pace = *apu.nr12 & 0b111;
+	if (apu.div_apu % 8 == 0 && ch1_sweep_pace > 0) // 64 Hz envelope sweep
+	{
+		apu.ch1_envelope_timer--;
+		if (apu.ch1_envelope_timer == 0)
+		{
+			apu.ch1_envelope_timer = ch1_sweep_pace;
+			int dir = get_flag(*apu.nr12, NR12_3) ? 1 : -1;
+			apu.ch1_current_volume += dir;
+			if (apu.ch1_current_volume < 0x0)
+				apu.ch1_current_volume = 0x0;
+			else if (apu.ch1_current_volume > 0xF)
+				apu.ch1_current_volume = 0xF;
+		}
+	}
 }
 
 void ch2_tick()
@@ -191,6 +202,17 @@ u8 ch4_digital_output()
 	return 0;
 }
 
+void push_samples()
+{
+	apu.sample_buffer[apu.sample_iterator++] = (ch1_digital_output() / 2 + ch2_digital_output() / 2) * 8;
+	// apu.sample_buffer[apu.sample_iterator++] = 0;
+	if (apu.sample_iterator == SAMPLE_BUFFER_SIZE)
+	{
+		apu.sample_iterator = 0;
+		// printf("0\n");
+	}
+}
+
 void apu_tick()
 {
 	apu.div_apu_ticked = 0;
@@ -212,4 +234,12 @@ void apu_tick()
 	// 	// Sound length
 	// if (apu.div_apu % 4 == 0) // 128 Hz
 	// 	// CH1 freq sweep
+
+	if (*timers.div != timers.div_prev)
+	{
+		push_samples();
+		push_samples();
+		// push_samples();
+		// push_samples();
+	}
 }

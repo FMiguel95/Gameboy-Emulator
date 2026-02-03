@@ -8,11 +8,10 @@
 extern "C" {
 #endif
 
-// channels output a value from $0 to $F
-// DACs convert these from -1 to 1
-// all 4 values added together the result ranges from -4 to 4
-// the output is put through a high-pass filter
+# define SAMPLE_RATE 32768
+# define SAMPLE_BUFFER_SIZE 1024
 
+// channels output a value from $0 to $F
 typedef struct {
 	// Global control registers
 	u8* nr52;		// Audio master control
@@ -60,6 +59,9 @@ typedef struct {
 
 	u8 div_apu;
 	int div_apu_ticked;
+
+	u8 sample_buffer[SAMPLE_BUFFER_SIZE];
+	int sample_iterator;
 
 } apu_t;
 

@@ -48,7 +48,7 @@ typedef struct
 } emulator_t;
 extern emulator_t emulator;
 
-# define FRAME_TIME 16750l // microseconds
+# define FRAME_TIME 16743l // microseconds
 # define FRAME_CYCLES 17556 // number of machine cycles in a frame
 
 # define WIN_SCALE 2

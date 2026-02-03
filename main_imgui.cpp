@@ -529,7 +529,7 @@ int main(int ac, char** av)
 	// Create window with SDL_Renderer graphics context
 	float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
 	SDL_WindowFlags window_flags = SDL_WINDOW_RESIZABLE /*| SDL_WINDOW_HIDDEN*/ | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-	SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", (int)(1280 * main_scale), (int)(720 * main_scale), window_flags);
+	SDL_Window* window = SDL_CreateWindow("GB", (int)(1280 * main_scale), (int)(720 * main_scale), window_flags);
 	if (window == nullptr)
 	{
 		printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -574,11 +574,36 @@ int main(int ac, char** av)
 	ImGui_ImplSDLRenderer3_Init(renderer);
 
 
+	SDL_AudioSpec spec = {
+		.format = SDL_AUDIO_S8,
+		.channels = 1,
+		.freq = SAMPLE_RATE
+	};
+
+	SDL_AudioDeviceID dev = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec);
+	if (!dev)
+	{
+		SDL_Log("Failed to open audio device: %s", SDL_GetError());
+		return 1;
+	}
+
+	SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, &spec);
+	if (!stream)
+	{
+		SDL_Log("Failed to create audio stream: %s", SDL_GetError());
+		return 1;
+	}
+
+	SDL_BindAudioStream(dev, stream);
+	SDL_ResumeAudioDevice(dev);
+
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	bool fullscreen = false;
+	unsigned long it = 0;
 	while (!emulator.quit)
 	{
+		it++;
 		long start_time = get_current_time();
 
 		SDL_Event event;
@@ -680,6 +705,10 @@ int main(int ac, char** av)
 		// emulator
 		run_clock(cycles_to_run);
 
+		if (it % 2 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
+			SDL_PutAudioStreamData(stream, apu.sample_buffer, sizeof(apu.sample_buffer));
+		// printf("================\n");
+
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer3_NewFrame();
 		ImGui_ImplSDL3_NewFrame();
@@ -733,5 +762,7 @@ int main(int ac, char** av)
 	SDL_DestroyTexture(tex_map9C00);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	SDL_DestroyAudioStream(stream);
+	SDL_CloseAudioDevice(dev);
 	SDL_Quit();
 }
