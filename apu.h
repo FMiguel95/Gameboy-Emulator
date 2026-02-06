@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-# define SAMPLE_RATE /*32768*/ 48000
-# define SAMPLE_BUFFER_SIZE 2048
+# define SAMPLE_RATE 48000
+# define SAMPLE_BUFFER_SIZE 4096
 
 typedef struct {
 	u8 buffer[SAMPLE_BUFFER_SIZE * 2];
@@ -75,6 +75,7 @@ typedef struct {
 	// u8 sample_buffer[SAMPLE_BUFFER_SIZE * 2];
 	// int sample_iterator;
 	ring_buffer rb;
+	long sample_timer; // values are in one hundred thousandths of a second
 
 } apu_t;
 

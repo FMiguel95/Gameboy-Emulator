@@ -42,6 +42,7 @@ int init_apu()
 	apu.wave_ram = memory.io_registers + 0x30;
 
 	buffer_reset(&apu.rb);
+	apu.sample_timer = 0;
 
 	return 1;
 }
@@ -219,6 +220,13 @@ void push_sample()
 
 void apu_tick()
 {
+	apu.sample_timer += SAMPLE_RATE;
+	if (apu.sample_timer >= 1048576)
+	{
+		push_sample();
+		apu.sample_timer -= 1048576;
+	}
+
 	apu.div_apu_ticked = 0;
 	int target_bit = 4; // 5 when double speed mode
 	if (((*timers.div >> target_bit) & 1) == 0 && ((timers.div_prev >> target_bit) & 1) == 1)
@@ -239,10 +247,6 @@ void apu_tick()
 	// if (apu.div_apu % 4 == 0) // 128 Hz
 	// 	// CH1 freq sweep
 
-	if (timers.m_cycles % 21 == 0)
-	{
-		push_sample();
-	}
 }
 
 void buffer_reset(ring_buffer* rb)

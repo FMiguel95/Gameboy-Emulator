@@ -600,11 +600,11 @@ int main(int ac, char** av)
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	bool fullscreen = false;
-	unsigned long it = 0;
+	long next_frame_time = get_current_time();
 	while (!emulator.quit)
 	{
-		it++;
-		long start_time = get_current_time();
+		if (!emulator.fforward)
+			next_frame_time += FRAME_TIME;
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
@@ -705,7 +705,7 @@ int main(int ac, char** av)
 		// emulator
 		run_clock(cycles_to_run);
 
-		if (buffer_size(&apu.rb) > 804 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
+		if (buffer_size(&apu.rb) > 1000 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
 		{
 			SDL_PutAudioStreamData(stream, apu.rb.buffer + apu.rb.head_index, buffer_size(&apu.rb));
 			buffer_reset(&apu.rb);
@@ -745,10 +745,13 @@ int main(int ac, char** av)
 
 		if (!emulator.fforward)
 		{
-			long end_time = get_current_time();
-			long sleep_time = start_time + FRAME_TIME - end_time;
+			long now = get_current_time();
+			long sleep_time = next_frame_time - now;
+
 			if (sleep_time > 0)
 				usleep(sleep_time);
+			else
+				next_frame_time = now;
 		}
 	}
 	close_rom();
