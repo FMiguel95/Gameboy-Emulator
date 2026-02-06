@@ -8,8 +8,20 @@
 extern "C" {
 #endif
 
-# define SAMPLE_RATE 32768
-# define SAMPLE_BUFFER_SIZE 1024
+# define SAMPLE_RATE /*32768*/ 48000
+# define SAMPLE_BUFFER_SIZE 2048
+
+typedef struct {
+	u8 buffer[SAMPLE_BUFFER_SIZE * 2];
+	int head_index;
+	int tail_index;
+} ring_buffer;
+
+void buffer_reset(ring_buffer* rb);
+
+void buffer_push(ring_buffer* rb, u8 val);
+
+int buffer_size(const ring_buffer* rb);
 
 // channels output a value from $0 to $F
 typedef struct {
@@ -60,8 +72,9 @@ typedef struct {
 	u8 div_apu;
 	int div_apu_ticked;
 
-	u8 sample_buffer[SAMPLE_BUFFER_SIZE];
-	int sample_iterator;
+	// u8 sample_buffer[SAMPLE_BUFFER_SIZE * 2];
+	// int sample_iterator;
+	ring_buffer rb;
 
 } apu_t;
 

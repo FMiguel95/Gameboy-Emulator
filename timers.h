@@ -18,6 +18,9 @@ typedef struct {
 	u8* tma;	// Timer modulo
 
 	u8* tac;	// Timer control
+
+	unsigned long m_cycles;
+	unsigned long t_states;
 	
 } timers_t;
 

@@ -46,4 +46,7 @@ void timers_tick()
 			}
 		}
 	}
+
+	timers.m_cycles++;
+	timers.t_states += 4;
 }

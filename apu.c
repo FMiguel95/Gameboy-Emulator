@@ -41,6 +41,8 @@ int init_apu()
 
 	apu.wave_ram = memory.io_registers + 0x30;
 
+	buffer_reset(&apu.rb);
+
 	return 1;
 }
 
@@ -202,15 +204,17 @@ u8 ch4_digital_output()
 	return 0;
 }
 
-void push_samples()
+void push_sample()
 {
-	apu.sample_buffer[apu.sample_iterator++] = (ch1_digital_output() / 2 + ch2_digital_output() / 2) * 8;
-	// apu.sample_buffer[apu.sample_iterator++] = 0;
-	if (apu.sample_iterator == SAMPLE_BUFFER_SIZE)
-	{
-		apu.sample_iterator = 0;
-		// printf("0\n");
-	}
+	// apu.sample_buffer[apu.sample_iterator++] = (ch1_digital_output() / 2 + ch2_digital_output() / 2) * 8;
+	// // apu.sample_buffer[apu.sample_iterator++] = 0;
+	// if (apu.sample_iterator == SAMPLE_BUFFER_SIZE)
+	// {
+	// 	apu.sample_iterator = 0;
+	// 	// printf("0\n");
+	// }
+	u8 sample = (ch1_digital_output() + ch2_digital_output()) * 4;
+	buffer_push(&apu.rb, sample);
 }
 
 void apu_tick()
@@ -235,11 +239,29 @@ void apu_tick()
 	// if (apu.div_apu % 4 == 0) // 128 Hz
 	// 	// CH1 freq sweep
 
-	if (*timers.div != timers.div_prev)
+	if (timers.m_cycles % 21 == 0)
 	{
-		push_samples();
-		push_samples();
-		// push_samples();
-		// push_samples();
+		push_sample();
 	}
+}
+
+void buffer_reset(ring_buffer* rb)
+{
+	memset(rb->buffer, 0, SAMPLE_BUFFER_SIZE * 2);
+	rb->head_index = 0;
+	rb->tail_index = 0;
+}
+
+void buffer_push(ring_buffer* rb, u8 val)
+{
+	rb->tail_index = (SAMPLE_BUFFER_SIZE - 1) & (rb->tail_index + 1);
+	rb->buffer[rb->tail_index] = val;
+	rb->buffer[SAMPLE_BUFFER_SIZE + rb->tail_index] = val;
+	if (rb->tail_index == rb->head_index)
+		rb->head_index = (SAMPLE_BUFFER_SIZE - 1) & (rb->head_index + 1);
+}
+
+int buffer_size(const ring_buffer* rb)
+{
+	return (rb->tail_index - rb->head_index) & (SAMPLE_BUFFER_SIZE - 1);
 }

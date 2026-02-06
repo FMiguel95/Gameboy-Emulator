@@ -705,8 +705,11 @@ int main(int ac, char** av)
 		// emulator
 		run_clock(cycles_to_run);
 
-		if (it % 2 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
-			SDL_PutAudioStreamData(stream, apu.sample_buffer, sizeof(apu.sample_buffer));
+		if (buffer_size(&apu.rb) > 804 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
+		{
+			SDL_PutAudioStreamData(stream, apu.rb.buffer + apu.rb.head_index, buffer_size(&apu.rb));
+			buffer_reset(&apu.rb);
+		}
 		// printf("================\n");
 
 		// Start the Dear ImGui frame
