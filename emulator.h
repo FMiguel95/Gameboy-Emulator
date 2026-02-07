@@ -22,12 +22,12 @@
 extern "C" {
 #endif
 
-typedef struct
-{
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	SDL_Surface* screen_surface;
-} window_t;
+// typedef struct
+// {
+// 	SDL_Window* window;
+// 	SDL_Renderer* renderer;
+// 	SDL_Surface* screen_surface;
+// } window_t;
 
 typedef struct
 {
@@ -37,14 +37,15 @@ typedef struct
 	int request_frame;
 	int quit;
 	int fforward;
+
 	char* rom_file_name;
 	char rom_file_path[1024];
 	char save_file_path[1024];
 
-	window_t window_screen;
-	window_t window_tiles;
-	window_t window_background9800;
-	window_t window_background9C00;
+	// window_t window_screen;
+	// window_t window_tiles;
+	// window_t window_background9800;
+	// window_t window_background9C00;
 } emulator_t;
 extern emulator_t emulator;
 
@@ -67,9 +68,9 @@ int load_sram();
 
 void save_sram();
 
-int init_window(window_t* window, char* title, int size_x, int size_y);
+// int init_window(window_t* window, char* title, int size_x, int size_y);
 
-void render_window(window_t* window);
+// void render_window(window_t* window);
 
 void free_ptr(void* ptr);
 
@@ -87,7 +88,7 @@ void display_screen();
 
 void display_vram();
 
-void display_background(window_t* window, u16 start_address);
+// void display_background(window_t* window, u16 start_address);
 
 void handle_events();
 

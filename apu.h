@@ -77,6 +77,12 @@ typedef struct {
 	ring_buffer rb;
 	long sample_timer; // values are in one hundred thousandths of a second
 
+	int sound_enable_global;
+	int sound_enable_ch1;
+	int sound_enable_ch2;
+	int sound_enable_ch3;
+	int sound_enable_ch4;
+
 } apu_t;
 
 extern apu_t apu;

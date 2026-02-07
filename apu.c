@@ -44,6 +44,12 @@ int init_apu()
 	buffer_reset(&apu.rb);
 	apu.sample_timer = 0;
 
+	apu.sound_enable_global = 1;
+	apu.sound_enable_ch1 = 1;
+	apu.sound_enable_ch2 = 1;
+	apu.sound_enable_ch3 = 1;
+	apu.sound_enable_ch4 = 1;
+
 	return 1;
 }
 
@@ -207,15 +213,21 @@ u8 ch4_digital_output()
 
 void push_sample()
 {
-	// apu.sample_buffer[apu.sample_iterator++] = (ch1_digital_output() / 2 + ch2_digital_output() / 2) * 8;
-	// // apu.sample_buffer[apu.sample_iterator++] = 0;
-	// if (apu.sample_iterator == SAMPLE_BUFFER_SIZE)
-	// {
-	// 	apu.sample_iterator = 0;
-	// 	// printf("0\n");
-	// }
-	u8 sample = (ch1_digital_output() + ch2_digital_output()) * 4;
-	buffer_push(&apu.rb, sample);
+	int master_volume_left = (*apu.nr50 >> 4) & 0b111; // 1-7
+	if (master_volume_left == 0)
+		master_volume_left = 1;
+	int master_volume_right = *apu.nr50 & 0b111; // 1-7
+	if (master_volume_right == 0)
+		master_volume_right = 1;
+	int master_volume = master_volume_left + master_volume_right; // 2-14
+
+	u8 sample_ch1 = ch1_digital_output() * apu.sound_enable_ch1;
+	u8 sample_ch2 = ch2_digital_output() * apu.sound_enable_ch2;
+	u8 sample_mixed = (sample_ch1 + sample_ch2) * 4 * apu.sound_enable_global;
+	
+	sample_mixed = sample_mixed * ((double)master_volume / 14);
+
+	buffer_push(&apu.rb, sample_mixed);
 }
 
 void apu_tick()

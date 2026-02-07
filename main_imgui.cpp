@@ -40,18 +40,27 @@ void imgui_menubar()
 
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Step Cycle", "B"))
+			if (ImGui::MenuItem("Step Cycle", "J"))
 			{
 				emulator.request_cycle = 1;
 			}
-			if (ImGui::MenuItem("Step Scanline", "N"))
+			if (ImGui::MenuItem("Step Scanline", "K"))
 			{
 				emulator.request_scanline = 1;
 			}
-			if (ImGui::MenuItem("Step Frame", "M"))
+			if (ImGui::MenuItem("Step Frame", "L"))
 			{
 				emulator.request_frame = 1;
 			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Sound"))
+		{
+			if (ImGui::MenuItem("Toggle Mute", "M")) { apu.sound_enable_global = !apu.sound_enable_global; }
+			if (ImGui::MenuItem("Toggle Mute Channel 1")) { apu.sound_enable_ch1 = !apu.sound_enable_ch1; }
+			if (ImGui::MenuItem("Toggle Mute Channel 2")) { apu.sound_enable_ch2 = !apu.sound_enable_ch2; }
+			if (ImGui::MenuItem("Toggle Mute Channel 3")) { apu.sound_enable_ch3 = !apu.sound_enable_ch3; }
+			if (ImGui::MenuItem("Toggle Mute Channel 4")) { apu.sound_enable_ch4 = !apu.sound_enable_ch4; }
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -323,29 +332,33 @@ void imgui_apu()
 
 		ImGui::Checkbox("APU Enable", &nr52_7);
 		ImGui::Text("APU DIV: %.2X", apu.div_apu);
+		ImGui::Text("Master volume left:  %d", (*apu.nr50 >> 4) & 0b111);
+		ImGui::Text("Master volume right: %d", *apu.nr50 & 0b111);
+		
+
 		ImGui::SeparatorText("Channel 1");
 		ImGui::Checkbox("Enable###ch1", &nr52_0);
 
-		// u8 reg_NR11 = read8_absolute(NR11);
-		// u8 reg_NR12 = read8_absolute(NR12);
-		// u8 reg_NR13 = read8_absolute(NR13);
-		// u8 reg_NR14 = read8_absolute(NR14);
-		// ImGui::Text("Wave Duty: %d", reg_NR11 >> 6);
-		// bool nr14_6 = get_flag(reg_NR14, 6);
-		// ImGui::Checkbox("Length enable###ch1length", &nr14_6);
-		// set_flag(&reg_NR14, 6, nr14_6);
-		// ImGui::Text("Initial length timer: %d", reg_NR11 & 0b00111111);
-		// ImGui::SameLine();
-		// ImGui::Text("Current: %d", apu.ch1_length_timer);
-		// ImGui::Text("Initial volume: %d", reg_NR12 >> 4);
-		// ImGui::SameLine();
-		// ImGui::Text("Current: %d", apu.ch1_current_volume);
-		// const char* ch1EnvDir = (reg_NR12 & 0b0000100) ? "increase" : "decrease";
-		// ImGui::Text("Env direction: %s", ch1EnvDir);
-		// ImGui::Text("Sweep pace: %d", reg_NR12 & 0b111);
-		// ImGui::Text("Period value: %d", ((int)(reg_NR14 & 0b111) << 8) | reg_NR13);
-		// ImGui::Checkbox("Trigger###ch1trigger", (bool*)&apu.ch1_request_trigger);
-		// write8_absolute(NR14, reg_NR14);
+		u8 reg_NR11 = read8_absolute(NR11);
+		u8 reg_NR12 = read8_absolute(NR12);
+		u8 reg_NR13 = read8_absolute(NR13);
+		u8 reg_NR14 = read8_absolute(NR14);
+		ImGui::Text("Wave Duty: %d", reg_NR11 >> 6);
+		bool nr14_6 = get_flag(reg_NR14, 6);
+		ImGui::Checkbox("Length enable###ch1length", &nr14_6);
+		set_flag(&reg_NR14, 6, nr14_6);
+		ImGui::Text("Initial length timer: %d", reg_NR11 & 0b00111111);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch1_length_timer);
+		ImGui::Text("Initial volume: %d", reg_NR12 >> 4);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch1_current_volume);
+		const char* ch1EnvDir = (reg_NR12 & 0b0000100) ? "increase" : "decrease";
+		ImGui::Text("Env direction: %s", ch1EnvDir);
+		ImGui::Text("Sweep pace: %d", reg_NR12 & 0b111);
+		ImGui::Text("Period value: %d", ((int)(reg_NR14 & 0b111) << 8) | reg_NR13);
+		ImGui::Checkbox("Trigger###ch1trigger", (bool*)&apu.ch1_request_trigger);
+		write8_absolute(NR14, reg_NR14);
 
 
 		ImGui::SeparatorText("Channel 2");
@@ -645,12 +658,22 @@ int main(int ac, char** av)
 					emulator.fforward = 1;
 				if (key == SDLK_R)
 					reset();
-				if (key == SDLK_B)
+				if (key == SDLK_J)
 					emulator.request_cycle = 1;
-				if (key == SDLK_N)
+				if (key == SDLK_K)
 					emulator.request_scanline = 1;
-				if (key == SDLK_M)
+				if (key == SDLK_L)
 					emulator.request_frame = 1;
+				if (key == SDLK_M)
+					apu.sound_enable_global = !apu.sound_enable_global;
+				if (key == SDLK_C)
+					apu.sound_enable_ch1 = !apu.sound_enable_ch1;
+				if (key == SDLK_V)
+					apu.sound_enable_ch2 = !apu.sound_enable_ch2;
+				if (key == SDLK_B)
+					apu.sound_enable_ch3 = !apu.sound_enable_ch3;
+				if (key == SDLK_N)
+					apu.sound_enable_ch4 = !apu.sound_enable_ch4;
 				
 			}
 
