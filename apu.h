@@ -42,6 +42,8 @@ typedef struct {
 	int ch1_duty_pos;
 	int ch1_current_volume;
 	int ch1_envelope_timer;
+	int ch1_sweep_pace;
+	int ch1_sweep_pace_timer;
 
 	// Sound Channel 2 — Pulse
 	u8* nr21;		// Channel 2 length timer & duty cycle

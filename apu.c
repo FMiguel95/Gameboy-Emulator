@@ -53,26 +53,6 @@ int init_apu()
 	return 1;
 }
 
-int ch1_digital_output()
-{
-	if (!get_flag(*apu.nr52, NR52_0))
-		return 0;
-	
-	int wave_duty = *apu.nr21 >> 6;
-	int val = duty_cycles[wave_duty][apu.ch1_duty_pos] * apu.ch1_current_volume;
-	return val;
-}
-
-int ch2_digital_output()
-{
-	if (!get_flag(*apu.nr52, NR52_1))
-		return 0;
-	
-	int wave_duty = *apu.nr21 >> 6;
-	int val = duty_cycles[wave_duty][apu.ch2_duty_pos] * apu.ch2_current_volume;
-	return val;
-}
-
 void ch1_tick()
 {
 	if (apu.ch1_request_trigger) // trigger channel
@@ -89,6 +69,9 @@ void ch1_tick()
 		apu.ch1_envelope_timer = *apu.nr12 & 0b111;
 		// volume is set to contents of nr12 initial volume
 		apu.ch1_current_volume = (*apu.nr12 >> 4) & 0b1111;
+
+		apu.ch1_sweep_pace = (*apu.nr10 >> 4) & 0b1111;
+		apu.ch1_sweep_pace_timer = 0;
 	}
 
 	if (*apu.nr12 & 0b11111000 == 0) // disable channel if initial volume and env is set to 0
@@ -133,6 +116,37 @@ void ch1_tick()
 				apu.ch1_current_volume = 0x0;
 			else if (apu.ch1_current_volume > 0xF)
 				apu.ch1_current_volume = 0xF;
+		}
+	}
+
+	if (apu.div_apu % 4 == 0 && apu.ch1_sweep_pace != 0) // 128 Hz frequency sweep
+	{
+		apu.ch1_sweep_pace_timer++;
+		if (apu.ch1_sweep_pace_timer == apu.ch1_sweep_pace)
+		{
+			apu.ch1_sweep_pace_timer = 0;
+			int dir = ((*apu.nr10 >> 3) & 1) ? -1 : 1;
+			int sweep_shift = *apu.nr10 & 0b111;
+			int shadow_period = ((int)(*apu.nr14 & 0b111) << 8) | *apu.nr13;
+			int new_period = shadow_period >> sweep_shift;
+			if (sweep_shift != 0)
+			{
+				if (dir > 0)
+					new_period = shadow_period + new_period;
+				else
+					new_period = shadow_period - new_period;
+			}
+
+			if (new_period <= 0x7FF)
+			{
+				*apu.nr13 = new_period;
+				*apu.nr14 = (*apu.nr14 & ~0b111) | (new_period >> 8);
+			}
+			else
+			{
+				set_flag(apu.nr52, NR52_0, 0);
+				return;
+			}
 		}
 	}
 }
@@ -199,6 +213,26 @@ void ch2_tick()
 				apu.ch2_current_volume = 0xF;
 		}
 	}
+}
+
+int ch1_digital_output()
+{
+	if (!get_flag(*apu.nr52, NR52_0))
+		return 0;
+	
+	int wave_duty = *apu.nr21 >> 6;
+	int val = duty_cycles[wave_duty][apu.ch1_duty_pos] * apu.ch1_current_volume;
+	return val;
+}
+
+int ch2_digital_output()
+{
+	if (!get_flag(*apu.nr52, NR52_1))
+		return 0;
+	
+	int wave_duty = *apu.nr21 >> 6;
+	int val = duty_cycles[wave_duty][apu.ch2_duty_pos] * apu.ch2_current_volume;
+	return val;
 }
 
 u8 ch3_digital_output()
