@@ -215,6 +215,53 @@ void ch2_tick()
 	}
 }
 
+void ch3_tick() // called 1048576 hz
+{
+	if (apu.ch3_request_trigger) // trigger channel
+	{
+		apu.ch3_request_trigger = 0;
+		// enable ch3
+		set_flag(apu.nr52, NR52_2, 1);
+		// reset length timer if expired
+		if (apu.ch3_length_timer == 0)
+			apu.ch3_length_timer = 256 - *apu.nr31;
+		// set period divider to the contents of NR23 and NR24
+		// apu.ch3_period_divider = ((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33;
+		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33))/* * 2*/;
+		apu.ch3_duty_pos = 0;
+	}
+
+	if (!get_flag(*apu.nr30, NR30_7))
+		set_flag(apu.nr52, NR52_2, 0);
+	if (!get_flag(*apu.nr52, NR52_2))
+		return;
+
+	apu.ch3_period_divider--;
+	apu.ch3_period_divider--;
+	if (apu.ch3_period_divider <= 0)
+	{
+		// apu.ch3_period_divider = ((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33;
+		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33))/* * 2*/;
+		apu.ch3_duty_pos = (apu.ch3_duty_pos + 1) & 0x1F;
+	}
+
+	if (!apu.div_apu_ticked)
+		return;
+
+	if (apu.div_apu % 2 == 0) // 256 Hz sound length
+	{
+		if (apu.ch3_length_timer > 0 && get_flag(*apu.nr34, NR34_6))
+		{
+			apu.ch3_length_timer--;
+			if (apu.ch3_length_timer == 0) // channel disables itself after length timer expires
+			{
+				set_flag(apu.nr52, NR52_2, 0);
+				return;
+			}
+		}
+	}
+}
+
 int ch1_digital_output()
 {
 	if (!get_flag(*apu.nr52, NR52_0))
@@ -237,7 +284,30 @@ int ch2_digital_output()
 
 u8 ch3_digital_output()
 {
-	return 0;
+	if (!get_flag(*apu.nr52, NR52_2))
+		return 0;
+
+	int output_level = (*apu.nr32 >> 5) & 0b11;
+	u8 sample = apu.wave_ram[apu.ch3_duty_pos / 2];
+	if (apu.ch3_duty_pos % 2 == 0)
+		sample = sample >> 4;
+	else
+		sample = sample & 0b1111;
+	switch (output_level)
+	{
+	case 0b00:
+		sample = 0;
+		break;
+	case 0b01:
+		break;
+	case 0b10:
+		sample = sample >> 1;
+		break;
+	case 0b11:
+		sample = sample >> 2;
+		break;
+	}
+	return sample;
 }
 
 u8 ch4_digital_output()
@@ -257,7 +327,8 @@ void push_sample()
 
 	u8 sample_ch1 = ch1_digital_output() * apu.sound_enable_ch1;
 	u8 sample_ch2 = ch2_digital_output() * apu.sound_enable_ch2;
-	u8 sample_mixed = (sample_ch1 + sample_ch2) * 4 * apu.sound_enable_global;
+	u8 sample_ch3 = ch3_digital_output() * apu.sound_enable_ch3;
+	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3) * 3 * apu.sound_enable_global;
 	
 	sample_mixed = sample_mixed * ((double)master_volume / 14);
 
@@ -286,6 +357,7 @@ void apu_tick()
 
 	ch1_tick();
 	ch2_tick();
+	ch3_tick();
 	// if (apu.div_apu % 8 == 0) // 64 Hz
 	// 	// Envelope sweep
 	// if (apu.div_apu % 2 == 0) // 256 Hz

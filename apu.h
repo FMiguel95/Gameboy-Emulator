@@ -63,7 +63,11 @@ typedef struct {
 	u8* nr32;		// Channel 3 output level
 	u8* nr33;		// Channel 3 period low [write-only]
 	u8* nr34;		// Channel 3 period high & control
-	u8* wave_ram;	// Wave pattern RAM
+	u8* wave_ram;	// Wave pattern RAM (16 bytes)
+	int ch3_request_trigger;
+	int ch3_length_timer;
+	int ch3_period_divider;
+	int ch3_duty_pos;
 
 	// Sound Channel 4 — Noise
 	u8* nr41;		// Channel 4 length timer [write-only]
@@ -74,8 +78,6 @@ typedef struct {
 	u8 div_apu;
 	int div_apu_ticked;
 
-	// u8 sample_buffer[SAMPLE_BUFFER_SIZE * 2];
-	// int sample_iterator;
 	ring_buffer rb;
 	long sample_timer; // values are in one hundred thousandths of a second
 
@@ -88,17 +90,6 @@ typedef struct {
 } apu_t;
 
 extern apu_t apu;
-
-typedef enum {
-	NR_0,	// 
-	NR_1,	// 
-	NR_2,	// 
-	NR_3,	// 
-	NR_4,	// 
-	NR_5,	// 
-	NR_6,	// 
-	NR_7,	// 
-} NR_bit;
 
 typedef enum {
 	NR52_0,	// CH1 on?
@@ -220,6 +211,61 @@ typedef enum {
 	NR24_6,	// Length enable
 	NR24_7,	// Trigger
 } NR24_bit;
+
+typedef enum {
+	NR30_0,	// unused
+	NR30_1,	// unused
+	NR30_2,	// unused
+	NR30_3,	// unused
+	NR30_4,	// unused
+	NR30_5,	// unused
+	NR30_6,	// unused
+	NR30_7,	// DAC on/off
+} NR30_bit;
+
+typedef enum {
+	NR31_0,	// Initial length timer
+	NR31_1,	// Initial length timer
+	NR31_2,	// Initial length timer
+	NR31_3,	// Initial length timer
+	NR31_4,	// Initial length timer
+	NR31_5,	// Initial length timer
+	NR31_6,	// Initial length timer
+	NR31_7,	// Initial length timer
+} NR31_bit;
+
+typedef enum {
+	NR32_0,	// unused
+	NR32_1,	// unused
+	NR32_2,	// unused
+	NR32_3,	// unused
+	NR32_4,	// unused
+	NR32_5,	// Output level
+	NR32_6,	// Output level
+	NR32_7,	// unused
+} NR32_bit;
+
+typedef enum {
+	NR33_0,	// Period low
+	NR33_1,	// Period low
+	NR33_2,	// Period low
+	NR33_3,	// Period low
+	NR33_4,	// Period low
+	NR33_5,	// Period low
+	NR33_6,	// Period low
+	NR33_7,	// Period low
+} NR33_bit;
+
+typedef enum {
+	NR34_0,	// Period high
+	NR34_1,	// Period high
+	NR34_2,	// Period high
+	NR34_3,	// unused
+	NR34_4,	// unused
+	NR34_5,	// unused
+	NR34_6,	// Length enable
+	NR34_7,	// Trigger
+} NR34_bit;
 
 int init_apu();
 

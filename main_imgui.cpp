@@ -396,6 +396,35 @@ void imgui_apu()
 
 		ImGui::SeparatorText("Channel 3");
 		ImGui::Checkbox("Enable###ch3", &nr52_2);
+		
+		u8 reg_NR31 = read8_absolute(NR31);
+		u8 reg_NR32 = read8_absolute(NR32);
+		u8 reg_NR34 = read8_absolute(NR34);
+
+		bool nr34_6 = get_flag(reg_NR24, NR34_6);
+		ImGui::Checkbox("Length enable###ch3length", &nr34_6);
+		set_flag(&reg_NR34, NR34_6, nr34_6);
+		ImGui::Text("Initial length timer: %d", reg_NR31);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch3_length_timer);
+		ImGui::Text("Volume: %d", (reg_NR32 >> 5) & 0b11);
+
+		float wave_ram[32];
+		// printf("[");
+		for (int i = 0; i < 32; i++)
+		{
+			int sample = apu.wave_ram[i / 2];
+			if (i % 2 == 0)
+				sample = sample >> 4;
+			else
+				sample = sample & 0b1111;
+			wave_ram[i] = sample;
+			// printf("%d,", sample);
+		}
+		// printf("]\n");
+		ImGui::PlotHistogram("###Wave Ram", wave_ram, 32, 0, NULL, 0, 15, ImVec2(260.0f, 60.0f));
+
+
 		ImGui::SeparatorText("Channel 4");
 		ImGui::Checkbox("Enable###ch4", &nr52_3);
 
