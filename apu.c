@@ -227,7 +227,7 @@ void ch3_tick() // called 1048576 hz
 			apu.ch3_length_timer = 256 - *apu.nr31;
 		// set period divider to the contents of NR23 and NR24
 		// apu.ch3_period_divider = ((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33;
-		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33))/* * 2*/;
+		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33));
 		apu.ch3_duty_pos = 0;
 	}
 
@@ -241,7 +241,7 @@ void ch3_tick() // called 1048576 hz
 	if (apu.ch3_period_divider <= 0)
 	{
 		// apu.ch3_period_divider = ((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33;
-		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33))/* * 2*/;
+		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33));
 		apu.ch3_duty_pos = (apu.ch3_duty_pos + 1) & 0x1F;
 	}
 
@@ -325,10 +325,14 @@ void push_sample()
 		master_volume_right = 1;
 	int master_volume = master_volume_left + master_volume_right; // 2-14
 
-	u8 sample_ch1 = ch1_digital_output() * apu.sound_enable_ch1;
-	u8 sample_ch2 = ch2_digital_output() * apu.sound_enable_ch2;
-	u8 sample_ch3 = ch3_digital_output() * apu.sound_enable_ch3;
-	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3) * 3 * apu.sound_enable_global;
+	int panning_ch1 = get_flag(*apu.nr51, 4) | get_flag(*apu.nr51, 0);
+	int panning_ch2 = get_flag(*apu.nr51, 5) | get_flag(*apu.nr51, 1);
+	int panning_ch3 = get_flag(*apu.nr51, 6) | get_flag(*apu.nr51, 2);
+	int panning_ch4 = get_flag(*apu.nr51, 7) | get_flag(*apu.nr51, 3);
+	u8 sample_ch1 = ch1_digital_output() * panning_ch1 * apu.sound_enable_ch1;
+	u8 sample_ch2 = ch2_digital_output() * panning_ch2 * apu.sound_enable_ch2;
+	u8 sample_ch3 = ch3_digital_output() * panning_ch3 * apu.sound_enable_ch3;
+	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3) * 2 * apu.sound_enable_global;
 	
 	sample_mixed = sample_mixed * ((double)master_volume / 14);
 

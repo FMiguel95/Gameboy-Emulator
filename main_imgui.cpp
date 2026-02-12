@@ -347,7 +347,7 @@ void imgui_apu()
 		bool nr14_6 = get_flag(reg_NR14, 6);
 		ImGui::Checkbox("Length enable###ch1length", &nr14_6);
 		set_flag(&reg_NR14, 6, nr14_6);
-		ImGui::Text("Initial length timer: %d", reg_NR11 & 0b00111111);
+		ImGui::Text("Initial length timer: %d", 64 - (reg_NR11 & 0b00111111));
 		ImGui::SameLine();
 		ImGui::Text("Current: %d", apu.ch1_length_timer);
 		ImGui::Text("Initial volume: %d", reg_NR12 >> 4);
@@ -372,7 +372,7 @@ void imgui_apu()
 		bool nr24_6 = get_flag(reg_NR24, NR24_6);
 		ImGui::Checkbox("Length enable###ch2length", &nr24_6);
 		set_flag(&reg_NR24, NR24_6, nr24_6);
-		ImGui::Text("Initial length timer: %d", reg_NR21 & 0b00111111);
+		ImGui::Text("Initial length timer: %d", 64 - (reg_NR21 & 0b00111111));
 		ImGui::SameLine();
 		ImGui::Text("Current: %d", apu.ch2_length_timer);
 		ImGui::Text("Initial volume: %d", reg_NR22 >> 4);
@@ -404,10 +404,26 @@ void imgui_apu()
 		bool nr34_6 = get_flag(reg_NR24, NR34_6);
 		ImGui::Checkbox("Length enable###ch3length", &nr34_6);
 		set_flag(&reg_NR34, NR34_6, nr34_6);
-		ImGui::Text("Initial length timer: %d", reg_NR31);
+		ImGui::Text("Initial length timer: %d", 256 - reg_NR31);
 		ImGui::SameLine();
 		ImGui::Text("Current: %d", apu.ch3_length_timer);
-		ImGui::Text("Volume: %d", (reg_NR32 >> 5) & 0b11);
+		char* str;
+		switch ((reg_NR32 >> 5) & 0b11)
+		{
+		case 0b00:
+			str = "0%";
+			break;
+		case 0b01:
+			str = "100%";
+			break;
+		case 0b10:
+			str = "50%";
+			break;
+		case 0b11:
+			str = "25%";
+			break;
+		}
+		ImGui::Text("Volume: %s", str);
 
 		float wave_ram[32];
 		// printf("[");
