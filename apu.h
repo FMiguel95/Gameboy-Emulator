@@ -74,6 +74,12 @@ typedef struct {
 	u8* nr42;		// Channel 4 volume & envelope
 	u8* nr43;		// Channel 4 frequency & randomness
 	u8* nr44;		// Channel 4 control
+	int ch4_request_trigger;
+	int ch4_length_timer;
+	int ch4_current_volume;
+	int ch4_envelope_timer;
+	u16 ch4_shift_register;
+	int ch4_shift_timer;
 
 	u8 div_apu;
 	int div_apu_ticked;
@@ -266,6 +272,50 @@ typedef enum {
 	NR34_6,	// Length enable
 	NR34_7,	// Trigger
 } NR34_bit;
+
+typedef enum {
+	NR41_0,	// Initial length timer
+	NR41_1,	// Initial length timer
+	NR41_2,	// Initial length timer
+	NR41_3,	// Initial length timer
+	NR41_4,	// Initial length timer
+	NR41_5,	// Initial length timer
+	NR41_6,	// unused
+	NR41_7,	// unused
+} NR41_bit;
+
+typedef enum {
+	NR42_0,	// Sweep pace
+	NR42_1,	// Sweep pace
+	NR42_2,	// Sweep pace
+	NR42_3,	// Env dir
+	NR42_4,	// Initial volume
+	NR42_5,	// Initial volume
+	NR42_6,	// Initial volume
+	NR42_7,	// Initial volume
+} NR42_bit;
+
+typedef enum {
+	NR43_0,	// Clock divider
+	NR43_1,	// Clock divider
+	NR43_2,	// Clock divider
+	NR43_3,	// LFSR width
+	NR43_4,	// Clock shift
+	NR43_5,	// Clock shift
+	NR43_6,	// Clock shift
+	NR43_7,	// Clock shift
+} NR43_bit;
+
+typedef enum {
+	NR44_0,	// unused
+	NR44_1,	// unused
+	NR44_2,	// unused
+	NR44_3,	// unused
+	NR44_4,	// unused
+	NR44_5,	// unused
+	NR44_6,	// Length enable
+	NR44_7,	// Trigger
+} NR44_bit;
 
 int init_apu();
 

@@ -215,7 +215,7 @@ void ch2_tick()
 	}
 }
 
-void ch3_tick() // called 1048576 hz
+void ch3_tick()
 {
 	if (apu.ch3_request_trigger) // trigger channel
 	{
@@ -225,8 +225,7 @@ void ch3_tick() // called 1048576 hz
 		// reset length timer if expired
 		if (apu.ch3_length_timer == 0)
 			apu.ch3_length_timer = 256 - *apu.nr31;
-		// set period divider to the contents of NR23 and NR24
-		// apu.ch3_period_divider = ((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33;
+		// set period divider to the contents of NR33 and NR34
 		apu.ch3_period_divider = (2048 - (((int)(*apu.nr34 & 0b111) << 8) | *apu.nr33));
 		apu.ch3_duty_pos = 0;
 	}
@@ -262,12 +261,93 @@ void ch3_tick() // called 1048576 hz
 	}
 }
 
+void ch4_tick()
+{
+	if (apu.ch4_request_trigger) // trigger channel
+	{
+		apu.ch4_request_trigger = 0;
+		// enable ch4
+		set_flag(apu.nr52, NR52_3, 1);
+		// reset length timer if expired
+		if (apu.ch4_length_timer > 0)
+			apu.ch4_length_timer = 64 - (*apu.nr41 & 0b111111);
+		// reset envelop timer
+		apu.ch4_envelope_timer = *apu.nr42 & 0b111;
+		// volume is set to contents of NR42 initial volume
+		apu.ch4_current_volume = (*apu.nr42 >> 4) & 0b1111;
+		apu.ch4_shift_register = 0;
+
+		u8 s = *apu.nr43 >> 4;
+		u8 r = (*apu.nr43) & 0b111;
+		int divisor = (r == 0) ? 8 : r * 16;
+		apu.ch4_shift_timer = divisor * (1 << s);
+	}
+
+	if (*apu.nr42 & 0b11111000 == 0) // disable channel if initial volume and env is set to 0
+		set_flag(apu.nr52, NR52_3, 0);
+
+	if (!get_flag(*apu.nr52, NR52_1))
+		return;
+
+	
+	if (!apu.div_apu_ticked)
+		return;
+
+	if (apu.div_apu % 2 == 0) // 256 Hz sound length
+	{
+		if (apu.ch4_length_timer > 0 && get_flag(*apu.nr44, NR44_6))
+		{
+			apu.ch4_length_timer--;
+			if (apu.ch4_length_timer == 0) // channel disables itself after length timer expires
+			{
+				set_flag(apu.nr52, NR52_3, 0);
+				return;
+			}
+		}
+	}
+
+	int ch4_sweep_pace = *apu.nr42 & 0b111;
+	if (apu.div_apu % 8 == 0 && ch4_sweep_pace > 0) // 64 Hz envelope sweep
+	{
+		apu.ch4_envelope_timer--;
+		if (apu.ch4_envelope_timer == 0)
+		{
+			apu.ch4_envelope_timer = ch4_sweep_pace;
+			int dir = get_flag(*apu.nr42, NR42_3) ? 1 : -1;
+			apu.ch4_current_volume += dir;
+			if (apu.ch4_current_volume < 0x0)
+				apu.ch4_current_volume = 0x0;
+			else if (apu.ch4_current_volume > 0xF)
+				apu.ch4_current_volume = 0xF;
+		}
+	}
+
+	if ((*apu.nr43 >> 4) < 14)
+	{
+		apu.ch4_shift_timer--;
+		if (apu.ch4_shift_timer == 0)
+		{
+			printf("BAMMMMMMMMMMMMMMMMMM=========\n");
+			u8 s = *apu.nr43 >> 4;
+			u8 r = (*apu.nr43) & 0b111;
+			int divisor = (r == 0) ? 8 : r * 16;
+			apu.ch4_shift_timer = divisor * (1 << s);
+
+			int new_bit = !(get_flag(apu.ch4_shift_register, 0) ^ get_flag(apu.ch4_shift_register, 1));
+			set_flag((u8*)&apu.ch4_shift_register, 7, new_bit);
+			if (get_flag(*apu.nr43, NR43_3))
+				set_flag((u8*)&apu.ch4_shift_register + 1, 7, new_bit);
+			apu.ch4_shift_register >>= 1;
+		}
+	}
+}
+
 int ch1_digital_output()
 {
 	if (!get_flag(*apu.nr52, NR52_0))
 		return 0;
 	
-	int wave_duty = *apu.nr21 >> 6;
+	int wave_duty = *apu.nr11 >> 6;
 	int val = duty_cycles[wave_duty][apu.ch1_duty_pos] * apu.ch1_current_volume;
 	return val;
 }
@@ -312,7 +392,11 @@ u8 ch3_digital_output()
 
 u8 ch4_digital_output()
 {
-	return 0;
+	if (!get_flag(*apu.nr52, NR52_0))
+		return 0;
+
+	u8 val = apu.ch4_current_volume * get_flag(apu.ch4_shift_timer, 0);
+	return val;
 }
 
 void push_sample()
@@ -332,7 +416,8 @@ void push_sample()
 	u8 sample_ch1 = ch1_digital_output() * panning_ch1 * apu.sound_enable_ch1;
 	u8 sample_ch2 = ch2_digital_output() * panning_ch2 * apu.sound_enable_ch2;
 	u8 sample_ch3 = ch3_digital_output() * panning_ch3 * apu.sound_enable_ch3;
-	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3) * 2 * apu.sound_enable_global;
+	u8 sample_ch4 = ch4_digital_output() * panning_ch4 * apu.sound_enable_ch4;
+	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3 + sample_ch4) * 2 * apu.sound_enable_global;
 	
 	sample_mixed = sample_mixed * ((double)master_volume / 14);
 
@@ -362,6 +447,7 @@ void apu_tick()
 	ch1_tick();
 	ch2_tick();
 	ch3_tick();
+	ch4_tick();
 	// if (apu.div_apu % 8 == 0) // 64 Hz
 	// 	// Envelope sweep
 	// if (apu.div_apu % 2 == 0) // 256 Hz

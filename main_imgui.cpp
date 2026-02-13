@@ -426,7 +426,6 @@ void imgui_apu()
 		ImGui::Text("Volume: %s", str);
 
 		float wave_ram[32];
-		// printf("[");
 		for (int i = 0; i < 32; i++)
 		{
 			int sample = apu.wave_ram[i / 2];
@@ -435,14 +434,40 @@ void imgui_apu()
 			else
 				sample = sample & 0b1111;
 			wave_ram[i] = sample;
-			// printf("%d,", sample);
 		}
-		// printf("]\n");
 		ImGui::PlotHistogram("###Wave Ram", wave_ram, 32, 0, NULL, 0, 15, ImVec2(260.0f, 60.0f));
-
 
 		ImGui::SeparatorText("Channel 4");
 		ImGui::Checkbox("Enable###ch4", &nr52_3);
+
+		u8 reg_NR41 = read8_absolute(NR41);
+		u8 reg_NR42 = read8_absolute(NR42);
+		u8 reg_NR43 = read8_absolute(NR43);
+		u8 reg_NR44 = read8_absolute(NR44);
+		ImGui::Text("Wave Duty: %d", reg_NR41 >> 6);
+		bool nr44_6 = get_flag(reg_NR44, NR44_6);
+		ImGui::Checkbox("Length enable###ch4length", &nr44_6);
+		set_flag(&reg_NR44, NR44_6, nr44_6);
+		ImGui::Text("Initial length timer: %d", 64 - (reg_NR41 & 0b00111111));
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch4_length_timer);
+		ImGui::Text("Initial volume: %d", reg_NR42 >> 4);
+		ImGui::SameLine();
+		ImGui::Text("Current: %d", apu.ch4_current_volume);
+		const char* ch4EnvDir = (reg_NR42 & 0b0000100) ? "increase" : "decrease";
+		ImGui::Text("Env direction: %s", ch4EnvDir);
+		ImGui::Text("Sweep pace: %d", reg_NR42 & 0b111);
+		char buffer[20];
+		for (int i = 15; i >= 0; i--)
+			buffer[15 - i] = (apu.ch4_shift_register & (1 << i)) ? '1' : '0';
+		buffer[16] = '\0';
+		ImGui::Text("LFSR: %s", buffer);
+		ImGui::Text("Shift timer: %d", apu.ch4_shift_timer);
+		ImGui::Text("Clock shift: %d", reg_NR43 >> 4);
+		ImGui::Text("LFSR width: %d", get_flag(reg_NR43, NR43_3) ? 7 : 15);
+		ImGui::Text("Clock divider: %d", reg_NR43 & 0b111);
+		ImGui::Checkbox("Trigger###ch4trigger", (bool*)&apu.ch4_request_trigger);
+		write8_absolute(NR44, reg_NR44);
 
 		set_flag(&reg_NR52, NR52_0, nr52_0);
 		set_flag(&reg_NR52, NR52_1, nr52_1);

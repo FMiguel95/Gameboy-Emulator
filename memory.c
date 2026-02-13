@@ -42,6 +42,8 @@ void write8(u16 address, u8 val)
 			apu.ch2_request_trigger = 1;
 		else if (address == NR34 && get_flag(val, NR34_7))
 			apu.ch3_request_trigger = 1;
+		else if (address == NR44 && get_flag(val, NR44_7))
+			apu.ch4_request_trigger = 1;
 		else if (address == DMA)
 			return oam_dma_transfer(val);
 		memory.io_registers[address - 0xFF00] = val;
