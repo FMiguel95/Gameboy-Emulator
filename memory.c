@@ -202,6 +202,19 @@ void set_flag(u8* byte, u8 bit, u8 val)
 		*byte &= ~(1 << bit);
 }
 
+u16 get_flag16(u16 byte, u8 bit)
+{
+	return ((byte >> bit) & 1);
+}
+
+void set_flag16(u16* byte, u8 bit, u8 val)
+{
+	if (val)
+		*byte |= (1 << bit);
+	else
+		*byte &= ~(1 << bit);
+}
+
 int init_memory()
 {
 	memory = (memory_t){0};

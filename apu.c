@@ -261,6 +261,7 @@ void ch3_tick()
 	}
 }
 
+#include <math.h>
 void ch4_tick()
 {
 	if (apu.ch4_request_trigger) // trigger channel
@@ -276,11 +277,13 @@ void ch4_tick()
 		// volume is set to contents of NR42 initial volume
 		apu.ch4_current_volume = (*apu.nr42 >> 4) & 0b1111;
 		apu.ch4_shift_register = 0;
+		// apu.ch4_shift_register = 0xFFFF;
 
-		u8 s = *apu.nr43 >> 4;
-		u8 r = (*apu.nr43) & 0b111;
-		int divisor = (r == 0) ? 8 : r * 16;
-		apu.ch4_shift_timer = divisor * (1 << s);
+		int shift = *apu.nr43 >> 4;
+		double divider = (*apu.nr43) & 0b111;
+		if (divider == 0)
+			divider = 0.5;
+		apu.ch4_shift_timer = 1048576 / (262144 / (divider * pow(2, shift)));
 	}
 
 	if (*apu.nr42 & 0b11111000 == 0) // disable channel if initial volume and env is set to 0
@@ -325,19 +328,36 @@ void ch4_tick()
 	if ((*apu.nr43 >> 4) < 14)
 	{
 		apu.ch4_shift_timer--;
-		if (apu.ch4_shift_timer == 0)
+		if (apu.ch4_shift_timer <= 0)
 		{
-			printf("BAMMMMMMMMMMMMMMMMMM=========\n");
-			u8 s = *apu.nr43 >> 4;
-			u8 r = (*apu.nr43) & 0b111;
-			int divisor = (r == 0) ? 8 : r * 16;
-			apu.ch4_shift_timer = divisor * (1 << s);
+			printf("SHIFT===============================================\n");
+			// printf("BAMMMMMMMMMMMMMMMMMM=========\n");
+			// u8 s = *apu.nr43 >> 4;
+			// u8 r = (*apu.nr43) & 0b111;
+			// int divisor = (r == 0) ? 8 : r * 16;
+			// apu.ch4_shift_timer = divisor * (1 << s);
+			int shift = *apu.nr43 >> 4;
+			double divider = (*apu.nr43) & 0b111;
+			if (divider == 0)
+				divider = 0.5;
+			apu.ch4_shift_timer = 1048576 / (262144 / (divider * pow(2, shift)));
 
-			int new_bit = !(get_flag(apu.ch4_shift_register, 0) ^ get_flag(apu.ch4_shift_register, 1));
-			set_flag((u8*)&apu.ch4_shift_register, 7, new_bit);
+			printf("old: ");
+			for (int i = 15; i >= 0; i--)
+				printf("%d", (apu.ch4_shift_register >> i) & 1);
+			printf("\n");
+
+			int new_bit = !(get_flag((u8)apu.ch4_shift_register, 0) ^ get_flag((u8)apu.ch4_shift_register, 1));
+			set_flag((u8*)&apu.ch4_shift_register + 1, 7, new_bit);
 			if (get_flag(*apu.nr43, NR43_3))
-				set_flag((u8*)&apu.ch4_shift_register + 1, 7, new_bit);
+				set_flag((u8*)&apu.ch4_shift_register, 7, new_bit);
+
 			apu.ch4_shift_register >>= 1;
+			printf("new: ");
+			for (int i = 15; i >= 0; i--)
+				printf("%d", (apu.ch4_shift_register >> i) & 1);
+			printf("\n");
+			printf("====================================================\n");
 		}
 	}
 }
