@@ -261,7 +261,6 @@ void ch3_tick()
 	}
 }
 
-#include <math.h>
 void ch4_tick()
 {
 	if (apu.ch4_request_trigger) // trigger channel
@@ -412,11 +411,11 @@ void push_sample()
 	int panning_ch2 = get_flag(*apu.nr51, 5) | get_flag(*apu.nr51, 1);
 	int panning_ch3 = get_flag(*apu.nr51, 6) | get_flag(*apu.nr51, 2);
 	int panning_ch4 = get_flag(*apu.nr51, 7) | get_flag(*apu.nr51, 3);
-	u8 sample_ch1 = ch1_digital_output() * panning_ch1 * apu.sound_enable_ch1;
-	u8 sample_ch2 = ch2_digital_output() * panning_ch2 * apu.sound_enable_ch2;
-	u8 sample_ch3 = ch3_digital_output() * panning_ch3 * apu.sound_enable_ch3;
-	u8 sample_ch4 = ch4_digital_output() * panning_ch4 * apu.sound_enable_ch4;
-	u8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3 + sample_ch4) * 2 * apu.sound_enable_global;
+	s8 sample_ch1 = ch1_digital_output() * panning_ch1 * apu.sound_enable_ch1;
+	s8 sample_ch2 = ch2_digital_output() * panning_ch2 * apu.sound_enable_ch2;
+	s8 sample_ch3 = ch3_digital_output() * panning_ch3 * apu.sound_enable_ch3;
+	s8 sample_ch4 = ch4_digital_output() * panning_ch4 * apu.sound_enable_ch4;
+	s8 sample_mixed = (sample_ch1 + sample_ch2 + sample_ch3 + sample_ch4) * apu.sound_enable_global;
 	
 	sample_mixed = sample_mixed * ((double)master_volume / 14);
 
@@ -447,13 +446,6 @@ void apu_tick()
 	ch2_tick();
 	ch3_tick();
 	ch4_tick();
-	// if (apu.div_apu % 8 == 0) // 64 Hz
-	// 	// Envelope sweep
-	// if (apu.div_apu % 2 == 0) // 256 Hz
-	// 	// Sound length
-	// if (apu.div_apu % 4 == 0) // 128 Hz
-	// 	// CH1 freq sweep
-
 }
 
 void buffer_reset(ring_buffer* rb)
@@ -463,7 +455,7 @@ void buffer_reset(ring_buffer* rb)
 	rb->tail_index = 0;
 }
 
-void buffer_push(ring_buffer* rb, u8 val)
+void buffer_push(ring_buffer* rb, s8 val)
 {
 	rb->tail_index = (SAMPLE_BUFFER_SIZE - 1) & (rb->tail_index + 1);
 	rb->buffer[rb->tail_index] = val;

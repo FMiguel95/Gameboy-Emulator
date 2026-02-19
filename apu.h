@@ -12,14 +12,14 @@ extern "C" {
 # define SAMPLE_BUFFER_SIZE 4096
 
 typedef struct {
-	u8 buffer[SAMPLE_BUFFER_SIZE * 2];
+	s8 buffer[SAMPLE_BUFFER_SIZE * 2];
 	int head_index;
 	int tail_index;
 } ring_buffer;
 
 void buffer_reset(ring_buffer* rb);
 
-void buffer_push(ring_buffer* rb, u8 val);
+void buffer_push(ring_buffer* rb, s8 val);
 
 int buffer_size(const ring_buffer* rb);
 
