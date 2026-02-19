@@ -276,23 +276,38 @@ void ch4_tick()
 		apu.ch4_envelope_timer = *apu.nr42 & 0b111;
 		// volume is set to contents of NR42 initial volume
 		apu.ch4_current_volume = (*apu.nr42 >> 4) & 0b1111;
-		apu.ch4_shift_register = 0;
-		// apu.ch4_shift_register = 0xFFFF;
 
-		int shift = *apu.nr43 >> 4;
-		double divider = (*apu.nr43) & 0b111;
-		if (divider == 0)
-			divider = 0.5;
-		apu.ch4_shift_timer = 1048576 / (262144 / (divider * pow(2, shift)));
+		apu.ch4_shift_register = 0;
+		u8 s = *apu.nr43 >> 4;
+		u8 r = (*apu.nr43) & 0b111;
+		int divisor = (r == 0) ? 8 : r * 4;
+		apu.ch4_shift_timer = divisor * (1 << s);
 	}
 
 	if (*apu.nr42 & 0b11111000 == 0) // disable channel if initial volume and env is set to 0
 		set_flag(apu.nr52, NR52_3, 0);
 
-	if (!get_flag(*apu.nr52, NR52_1))
+	if (!get_flag(*apu.nr52, NR52_3))
 		return;
 
-	
+	if ((*apu.nr43 >> 4) < 14)
+	{
+		apu.ch4_shift_timer--;
+		if (apu.ch4_shift_timer <= 0)
+		{
+			u8 s = *apu.nr43 >> 4;
+			u8 r = (*apu.nr43) & 0b111;
+			int divisor = (r == 0) ? 8 : r * 4;
+			apu.ch4_shift_timer = divisor * (1 << s);
+
+			int new_bit = !(get_flag16(apu.ch4_shift_register, 0) ^ get_flag16(apu.ch4_shift_register, 1));
+			set_flag16(&apu.ch4_shift_register, 15, new_bit);
+			if (get_flag(*apu.nr43, NR43_3))
+				set_flag16(&apu.ch4_shift_register, 7, new_bit);
+			apu.ch4_shift_register >>= 1;
+		}
+	}
+
 	if (!apu.div_apu_ticked)
 		return;
 
@@ -322,42 +337,6 @@ void ch4_tick()
 				apu.ch4_current_volume = 0x0;
 			else if (apu.ch4_current_volume > 0xF)
 				apu.ch4_current_volume = 0xF;
-		}
-	}
-
-	if ((*apu.nr43 >> 4) < 14)
-	{
-		apu.ch4_shift_timer--;
-		if (apu.ch4_shift_timer <= 0)
-		{
-			printf("SHIFT===============================================\n");
-			// printf("BAMMMMMMMMMMMMMMMMMM=========\n");
-			// u8 s = *apu.nr43 >> 4;
-			// u8 r = (*apu.nr43) & 0b111;
-			// int divisor = (r == 0) ? 8 : r * 16;
-			// apu.ch4_shift_timer = divisor * (1 << s);
-			int shift = *apu.nr43 >> 4;
-			double divider = (*apu.nr43) & 0b111;
-			if (divider == 0)
-				divider = 0.5;
-			apu.ch4_shift_timer = 1048576 / (262144 / (divider * pow(2, shift)));
-
-			printf("old: ");
-			for (int i = 15; i >= 0; i--)
-				printf("%d", (apu.ch4_shift_register >> i) & 1);
-			printf("\n");
-
-			int new_bit = !(get_flag((u8)apu.ch4_shift_register, 0) ^ get_flag((u8)apu.ch4_shift_register, 1));
-			set_flag((u8*)&apu.ch4_shift_register + 1, 7, new_bit);
-			if (get_flag(*apu.nr43, NR43_3))
-				set_flag((u8*)&apu.ch4_shift_register, 7, new_bit);
-
-			apu.ch4_shift_register >>= 1;
-			printf("new: ");
-			for (int i = 15; i >= 0; i--)
-				printf("%d", (apu.ch4_shift_register >> i) & 1);
-			printf("\n");
-			printf("====================================================\n");
 		}
 	}
 }
@@ -412,10 +391,10 @@ u8 ch3_digital_output()
 
 u8 ch4_digital_output()
 {
-	if (!get_flag(*apu.nr52, NR52_0))
+	if (!get_flag(*apu.nr52, NR52_3))
 		return 0;
 
-	u8 val = apu.ch4_current_volume * get_flag(apu.ch4_shift_timer, 0);
+	u8 val = apu.ch4_current_volume * get_flag16(apu.ch4_shift_register, 0);
 	return val;
 }
 
