@@ -42,10 +42,6 @@ typedef struct
 	char rom_file_path[1024];
 	char save_file_path[1024];
 
-	// window_t window_screen;
-	// window_t window_tiles;
-	// window_t window_background9800;
-	// window_t window_background9C00;
 } emulator_t;
 extern emulator_t emulator;
 
@@ -60,6 +56,8 @@ extern emulator_t emulator;
 # define WIN_SCREEN_SIZE_X 160
 # define WIN_SCREEN_SIZE_Y 144
 
+int init_emu();
+
 int load_rom(const char* path);
 
 int ensure_dir(const char* path);
@@ -67,10 +65,6 @@ int ensure_dir(const char* path);
 int load_sram();
 
 void save_sram();
-
-// int init_window(window_t* window, char* title, int size_x, int size_y);
-
-// void render_window(window_t* window);
 
 void free_ptr(void* ptr);
 
@@ -81,16 +75,6 @@ int run_emulator();
 void run_clock(int n_cycles);
 
 long get_current_time();
-
-void draw_line(int pos_x, int pos_y, int dir_x, int dir_y, int length, int color, int* pixels);
-
-void display_screen();
-
-void display_vram();
-
-// void display_background(window_t* window, u16 start_address);
-
-void handle_events();
 
 #ifdef __cplusplus
 }

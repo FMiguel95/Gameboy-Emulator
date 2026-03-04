@@ -2,15 +2,14 @@
 #include "./imgui/imgui_impl_sdl3.h"
 #include "./imgui/imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL.h>
-// #include <gtk/gtk.h>
 #include <stdio.h>
 #include "emulator.h"
 
 void reset()
 {
-	save_sram();
+	const char* rom_file_path = emulator.rom_file_path;
 	close_rom();
-	load_rom(emulator.rom_file_path);
+	load_rom(rom_file_path);
 }
 
 void imgui_menubar()
@@ -19,7 +18,21 @@ void imgui_menubar()
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Load ROM...")) {}
+			if (ImGui::MenuItem("Load ROM..."))
+			{
+				FILE *fp = popen("zenity --file-selection --filename=\"./\"", "r");
+				char filepath[1024];
+
+				if (fgets(filepath, sizeof(filepath), fp) != NULL)
+				{
+					filepath[strlen(filepath) - 1] = '\0';
+					pclose(fp);
+					close_rom();
+					load_rom(filepath);
+				}
+				else
+					pclose(fp);
+			}
 			if (ImGui::MenuItem("Save State", nullptr, false, false)) {}
 			if (ImGui::MenuItem("Load State", nullptr, false, false)) {}
 			if (ImGui::MenuItem("Exit", "Esc")) { emulator.quit = 1; }
@@ -205,7 +218,13 @@ void imgui_screen(SDL_Texture* tex_screen, SDL_Texture* tex_screen_next)
 
 void imgui_fullscreen(SDL_Texture* tex_screen)
 {
-	ImGui::Begin("Full Screen");
+	ImGuiWindowClass window_class;
+	window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoUndocking;
+
+	// Apply to next window
+	ImGui::SetNextWindowClass(&window_class);
+
+	ImGui::Begin("Full Screen", nullptr, ImGuiWindowFlags_NoCollapse);
 
 	ImVec2 avail = ImGui::GetContentRegionAvail();
 
@@ -229,9 +248,7 @@ void imgui_fullscreen(SDL_Texture* tex_screen)
 		(avail.y - size.y) * 0.5f
 	));
 
-	SDL_UpdateTexture(tex_screen, nullptr,
-					ppu.pixel_buffer_public,
-					WIN_SCREEN_SIZE_X * 4);
+	SDL_UpdateTexture(tex_screen, nullptr, ppu.pixel_buffer_public, WIN_SCREEN_SIZE_X * 4);
 
 	ImGui::Image((ImTextureID)tex_screen, size);
 
@@ -593,14 +610,10 @@ void imgui_buttons()
 
 int main(int ac, char** av)
 {
-	if (ac <= 1)
-	{
-		printf("Usage: ./emu <rom_path>\n");
-		return 1;
-	}
+	init_emu();
 
-	if (!load_rom(av[1]))
-		return 1;
+	if (ac > 1)
+		load_rom(av[1]);
 
 	// Setup SDL
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD))
@@ -744,7 +757,6 @@ int main(int ac, char** av)
 					apu.sound_enable_ch3 = !apu.sound_enable_ch3;
 				if (key == SDLK_N)
 					apu.sound_enable_ch4 = !apu.sound_enable_ch4;
-				
 			}
 
 			// on key up
@@ -777,33 +789,34 @@ int main(int ac, char** av)
 
 		}
 
-		int cycles_to_run = FRAME_CYCLES;
-		if (emulator.paused)
-			cycles_to_run = 0;
-		if (emulator.request_frame)
+		if (emulator.rom_file_name != NULL)
 		{
-			emulator.request_frame = 0;
-			cycles_to_run = FRAME_CYCLES;
+			int cycles_to_run = FRAME_CYCLES;
+			if (emulator.paused)
+				cycles_to_run = 0;
+			if (emulator.request_frame)
+			{
+				emulator.request_frame = 0;
+				cycles_to_run = FRAME_CYCLES;
+			}
+			if (emulator.request_scanline)
+			{
+				emulator.request_scanline = 0;
+				cycles_to_run = 114;
+			}
+			if (emulator.request_cycle)
+			{
+				emulator.request_cycle = 0;
+				cycles_to_run = 1;
+			}
+			run_clock(cycles_to_run);
+	
+			if (buffer_size(&apu.rb) > 1000 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
+			{
+				SDL_PutAudioStreamData(stream, apu.rb.buffer + apu.rb.head_index, buffer_size(&apu.rb));
+				buffer_reset(&apu.rb);
+			}
 		}
-		if (emulator.request_scanline)
-		{
-			emulator.request_scanline = 0;
-			cycles_to_run = 114;
-		}
-		if (emulator.request_cycle)
-		{
-			emulator.request_cycle = 0;
-			cycles_to_run = 1;
-		}
-		// emulator
-		run_clock(cycles_to_run);
-
-		if (buffer_size(&apu.rb) > 1000 && cycles_to_run == FRAME_CYCLES && !emulator.fforward)
-		{
-			SDL_PutAudioStreamData(stream, apu.rb.buffer + apu.rb.head_index, buffer_size(&apu.rb));
-			buffer_reset(&apu.rb);
-		}
-		// printf("================\n");
 
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer3_NewFrame();
@@ -811,9 +824,9 @@ int main(int ac, char** av)
 		ImGui::NewFrame();
 		ImGui::DockSpaceOverViewport();
 
+		imgui_menubar();
 		if (!fullscreen)
 		{
-			imgui_menubar();
 			imgui_cpu();
 			imgui_timers();
 			imgui_screen(tex_screen, tex_screen_next);

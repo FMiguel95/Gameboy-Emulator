@@ -2,19 +2,9 @@
 
 emulator_t emulator;
 
-int load_rom(const char* path)
+int init_emu()
 {
-	if (path != emulator.rom_file_path)
-		strcpy(emulator.rom_file_path, path);
-	printf("%s\n", emulator.rom_file_path);
-	if (!read_rom(path))
-		return 0;
-	if (!init_mbc())
-		return 0;
 	if (!init_memory())
-		return 0;
-	emulator.rom_file_name = basename((char*)path);
-	if (!load_sram())
 		return 0;
 	if (!init_tiles())
 		return 0;
@@ -31,6 +21,21 @@ int load_rom(const char* path)
 
 	emulator.paused = 0;
 	emulator.quit = 0;
+	emulator.rom_file_name = NULL;
+
+	return 1;
+}
+
+int load_rom(const char* path)
+{
+	strcpy(emulator.rom_file_path, path);
+	if (!read_rom(path))
+		return 0;
+	if (!init_mbc())
+		return 0;
+	emulator.rom_file_name = basename((char*)path);
+	if (!load_sram())
+		return 0;
 
 	return 1;
 }
@@ -164,7 +169,7 @@ void close_rom()
 	free_ptr(cartridge.rom);
 	free_ptr(cartridge.mbc);
 	free_ptr(cartridge.ram);
-	// free_ptr(emulator.rom_file_name);
+	init_emu();
 }
 
 int run_emulator()

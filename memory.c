@@ -218,8 +218,8 @@ void set_flag16(u16* byte, u8 bit, u8 val)
 int init_memory()
 {
 	memory = (memory_t){0};
-	memory.rom_bank0 = cartridge.rom;
-	memory.rom_bank1 = cartridge.rom + 0x4000;
+	// memory.rom_bank0 = cartridge.rom;
+	// memory.rom_bank1 = cartridge.rom + 0x4000;
 
 	return 1;
 }
