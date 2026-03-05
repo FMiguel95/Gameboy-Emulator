@@ -50,7 +50,7 @@ void imgui_menubar()
 			}
 			if (ImGui::MenuItem("Stop"))
 			{
-
+				close_rom();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Step Cycle", "J"))
@@ -70,10 +70,10 @@ void imgui_menubar()
 		if (ImGui::BeginMenu("Sound"))
 		{
 			if (ImGui::MenuItem("Toggle Mute", "M")) { apu.sound_enable_global = !apu.sound_enable_global; }
-			if (ImGui::MenuItem("Toggle Mute Channel 1")) { apu.sound_enable_ch1 = !apu.sound_enable_ch1; }
-			if (ImGui::MenuItem("Toggle Mute Channel 2")) { apu.sound_enable_ch2 = !apu.sound_enable_ch2; }
-			if (ImGui::MenuItem("Toggle Mute Channel 3")) { apu.sound_enable_ch3 = !apu.sound_enable_ch3; }
-			if (ImGui::MenuItem("Toggle Mute Channel 4")) { apu.sound_enable_ch4 = !apu.sound_enable_ch4; }
+			if (ImGui::MenuItem("Toggle Mute Channel 1", "C")) { apu.sound_enable_ch1 = !apu.sound_enable_ch1; }
+			if (ImGui::MenuItem("Toggle Mute Channel 2", "V")) { apu.sound_enable_ch2 = !apu.sound_enable_ch2; }
+			if (ImGui::MenuItem("Toggle Mute Channel 3", "B")) { apu.sound_enable_ch3 = !apu.sound_enable_ch3; }
+			if (ImGui::MenuItem("Toggle Mute Channel 4", "N")) { apu.sound_enable_ch4 = !apu.sound_enable_ch4; }
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
