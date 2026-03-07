@@ -19,7 +19,7 @@ CC       = gcc
 CXX      = g++
 CFLAGS   = -O3 $(INCLUDES) -g
 CXXFLAGS = -O3 $(INCLUDES) -g `pkg-config --cflags --libs gtk4`
-LDFLAGS  = -lSDL3 `pkg-config --libs gtk4` -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN/lib'
+LDFLAGS  = -lSDL3 -lSDL3_image `pkg-config --libs gtk4` -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN/lib'
 
 # CFLAGS   = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)
 # CXXFLAGS = -g -O3 -flto -march=native -mtune=native -fno-plt -fomit-frame-pointer $(INCLUDES)

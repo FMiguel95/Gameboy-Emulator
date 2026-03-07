@@ -2,8 +2,21 @@
 #include "./imgui/imgui_impl_sdl3.h"
 #include "./imgui/imgui_impl_sdlrenderer3.h"
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <stdio.h>
 #include "emulator.h"
+#include "icon.h"
+
+void set_window_icon(SDL_Window* window)
+{
+	SDL_IOStream* stream = SDL_IOFromConstMem(icon_png, icon_length);
+	SDL_Surface* icon = IMG_Load_IO(stream, true);
+	if (icon)
+	{
+		SDL_SetWindowIcon(window, icon);
+		SDL_DestroySurface(icon);
+	}
+}
 
 void reset()
 {
@@ -625,7 +638,7 @@ int main(int ac, char** av)
 	// Create window with SDL_Renderer graphics context
 	float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
 	SDL_WindowFlags window_flags = SDL_WINDOW_RESIZABLE /*| SDL_WINDOW_HIDDEN*/ | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-	SDL_Window* window = SDL_CreateWindow("GB", (int)(1280 * main_scale), (int)(720 * main_scale), window_flags);
+	SDL_Window* window = SDL_CreateWindow("HimaGB", (int)(1280 * main_scale), (int)(720 * main_scale), window_flags);
 	if (window == nullptr)
 	{
 		printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -639,6 +652,7 @@ int main(int ac, char** av)
 		return 1;
 	}
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+	set_window_icon(window);
 	SDL_ShowWindow(window);
 
 	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
@@ -695,7 +709,7 @@ int main(int ac, char** av)
 
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	bool fullscreen = false;
+	bool fullscreen = true;
 	long next_frame_time = get_current_time();
 	while (!emulator.quit)
 	{

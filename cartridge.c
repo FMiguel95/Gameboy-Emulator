@@ -508,7 +508,13 @@ void write_mbc3(u16 address, u8 val)
 	else if (address < 0x6000) // RAM Bank Number - or - RTC Register Select
 		mbc->reg_ram_bank_number_rtc_register_select = val & 0b1111;
 	else if (address < 0x8000) // Latch Clock Data
+	{
+		if (mbc->reg_latch_clock_data == 0x0 && val == 0x1)
+		{
+			// record time in clock counter registers
+		}
 		mbc->reg_latch_clock_data = val;
+	}
 	else if (address < 0xC000)
 	{
 		if (cartridge.mbc->ram_enable)
