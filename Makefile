@@ -1,5 +1,5 @@
 # --- Project Setup ---
-TARGET = emulator
+TARGET = HimaGB
 
 # Sources
 C_SRCS      = $(wildcard *.c)
