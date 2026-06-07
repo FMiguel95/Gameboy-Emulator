@@ -94,8 +94,8 @@ u8 read8(u16 address)
 	if (address == JOYP)
 		return read_joypad();
 
-	if (!memory.io_registers[0x50] && address < 0x0100)
-		return boot_rom[address];
+	if (!memory.io_registers[0x50] && (address < 0x0100 || (address >= 0x0200 && address < 0x0900)))
+		return boot_rom_cgb[address];
 	else if (address < 0x4000)
 		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom1_bank)[address];
 	else if (address < 0x8000)
