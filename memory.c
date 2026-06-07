@@ -10,7 +10,12 @@ void write8(u16 address, u8 val)
 		u8 ppu_mode = read8(STAT) & 0b11;
 		u8 lcdc = read8(LCDC);
 		if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
-			memory.video_ram[address - 0x8000] = val;
+		{
+			int offset = 0;
+			if (read8_absolute(VBK) & 1)
+				offset = 0x2000;
+			memory.video_ram[address - 0x8000 + offset] = val;
+		}
 	}
 	else if (address < 0xC000)
 		cartridge.mbc->write_mbc(address, val);
@@ -102,10 +107,13 @@ u8 read8(u16 address)
 		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom2_bank)[address - 0x4000];
 	else if (address < 0xA000)
 	{
+		int offset = 0;
+		if (read8_absolute(VBK) & 1)
+			offset = 0x2000;
 		// u8 ppu_mode = read8(STAT) & 0b11;
 		// u8 lcdc = read8(LCDC);
 		// if (ppu_mode != 3 || get_flag(lcdc, 7) == 0)
-			return memory.video_ram[address - 0x8000];
+			return memory.video_ram[address - 0x8000 + offset];
 		// else
 		// 	return 0xFF;
 	}

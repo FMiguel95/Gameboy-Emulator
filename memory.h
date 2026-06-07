@@ -56,15 +56,33 @@ extern "C" {
 # define BANK	0xFF50 // Boot ROM mapping control	W
 # define IE		0xFFFF // Interrupt enable	R/W
 
+# define SYS		0xFF4C // CPU mode select
+# define SPD		0xFF4D // Prepare speed switch
+# define VBK		0xFF4F // VRAM bank
+# define HDMA1		0xFF51 // VRAM DMA source high
+# define HDMA2		0xFF52 // VRAM DMA source low
+# define HDMA3		0xFF53 // VRAM DMA destination high
+# define HDMA4		0xFF54 // VRAM DMA destination low
+# define HDMA5		0xFF55 // VRAM DMA length/mode/start
+# define RP			0xFF56 // Infrared communications port
+# define BCPS_BGPI	0xFF68 // Background color palette specification / Background palette index
+# define BCPD_BGPD	0xFF69 // Background color palette data / Background palette data
+# define OCPS_OBPI	0xFF6A // OBJ color palette specification / OBJ palette index
+# define OCPD_OBPD	0xFF6B // OBJ color palette data / OBJ palette data
+# define OPRI		0xFF6C // Object priority mode
+# define WBK		0xFF70 // WRAM bank
+# define PCM12		0xFF76 // Audio digital outputs 1 & 2
+# define PCM34		0xFF77 // Audio digital outputs 3 & 4
+
 typedef struct {
 	// u8 rom_bank0[0x4000];	// 0000 - 3FFF
 	u8* rom_bank0;				// 0000 - 3FFF
 	// u8 rom_bank1[0x4000];	// 4000 - 7FFF
 	u8* rom_bank1;				// 4000 - 7FFF
-	u8 video_ram[0x2000];		// 8000 - 9FFF
+	u8 video_ram[0x4000];		// 8000 - 9FFF 2 banks
 	// u8 external_ram[0x2000];	// A000 - BFFF
 	u8* external_ram;			// A000 - BFFF
-	u8 work_ram[0x2000];		// C000 - DFFF
+	u8 work_ram[0x8000];		// C000 - DFFF 8 banks
 	u8 echo_ram[0x1E00];		// E000 - FDFF
 	u8 oam[0xA0];				// FE00 - FE9F
 	u8 unused[0x60];			// FEA0 - FEFF

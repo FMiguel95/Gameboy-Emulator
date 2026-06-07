@@ -509,11 +509,11 @@ void imgui_apu()
 	ImGui::End();
 }
 
-void imgui_vram(SDL_Texture* tex_vram)
+void imgui_vram0(SDL_Texture* tex_vram)
 {
 	int tex_vram_pixels[WIN_VRAM_SIZE_X * WIN_VRAM_SIZE_Y];
 
-	if (ImGui::Begin("VRAM"))
+	if (ImGui::Begin("VRAM Bank 0"))
 	{
 		size_t tiles_per_row = 16;
 		for (size_t y = 0; y < WIN_VRAM_SIZE_Y; y++)
@@ -524,6 +524,31 @@ void imgui_vram(SDL_Texture* tex_vram)
 				size_t tile_y = y / 8;
 				size_t tile_index = tile_y * tiles_per_row + tile_x;
 				pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
+				pixel_color color = get_color(color_code);
+
+				tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
+			}
+		}
+		SDL_UpdateTexture(tex_vram, NULL, tex_vram_pixels, WIN_VRAM_SIZE_X * 4);
+		ImGui::Image(tex_vram, ImVec2(WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y));
+	}
+	ImGui::End();
+}
+void imgui_vram1(SDL_Texture* tex_vram)
+{
+	int tex_vram_pixels[WIN_VRAM_SIZE_X * WIN_VRAM_SIZE_Y];
+
+	if (ImGui::Begin("VRAM Bank 1"))
+	{
+		size_t tiles_per_row = 16;
+		for (size_t y = 0; y < WIN_VRAM_SIZE_Y; y++)
+		{
+			for (size_t x = 0; x < WIN_VRAM_SIZE_X; x++)
+			{
+				size_t tile_x = x / 8;
+				size_t tile_y = y / 8;
+				size_t tile_index = tile_y * tiles_per_row + tile_x;
+				pixel_code color_code = get_pixel_code(tiles[tile_index + 0x180], x % 8, y % 8);
 				pixel_color color = get_color(color_code);
 
 				tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
@@ -659,7 +684,8 @@ int main(int ac, char** av)
 	SDL_SetTextureScaleMode(tex_screen, SDL_SCALEMODE_NEAREST);
 	SDL_Texture* tex_screen_next = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 	SDL_SetTextureScaleMode(tex_screen_next, SDL_SCALEMODE_NEAREST);
-	SDL_Texture* tex_vram = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	SDL_Texture* tex_vram0 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	SDL_Texture* tex_vram1 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
 	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 
@@ -846,7 +872,8 @@ int main(int ac, char** av)
 			imgui_screen(tex_screen, tex_screen_next);
 			imgui_ppu();
 			imgui_apu();
-			imgui_vram(tex_vram);
+			imgui_vram0(tex_vram0);
+			imgui_vram1(tex_vram1);
 			imgui_maps(tex_map9800, tex_map9C00);
 			// imgui_buttons();
 		}
@@ -883,7 +910,8 @@ int main(int ac, char** av)
 
 	SDL_DestroyTexture(tex_screen);
 	SDL_DestroyTexture(tex_screen_next);
-	SDL_DestroyTexture(tex_vram);
+	SDL_DestroyTexture(tex_vram0);
+	SDL_DestroyTexture(tex_vram1);
 	SDL_DestroyTexture(tex_map9800);
 	SDL_DestroyTexture(tex_map9C00);
 	SDL_DestroyRenderer(renderer);

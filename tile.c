@@ -1,12 +1,16 @@
 #include "tile.h"
 
-tile tiles[0x180];
+tile tiles[0x300];
 
 int init_tiles()
 {
 	for (size_t i = 0; i < 0x180; i++)
 	{
 		tiles[i] = memory.video_ram + i * 16;
+	}
+	for (size_t i = 0x180; i < 0x300; i++)
+	{
+		tiles[i] = memory.video_ram + 0x2000 + (i - 0x180) * 16;
 	}
 	return 1;
 }

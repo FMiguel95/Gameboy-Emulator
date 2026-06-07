@@ -11,7 +11,7 @@ extern "C" {
 
 typedef u8* tile;
 
-extern tile tiles[0x180];
+extern tile tiles[0x300];
 
 typedef enum {
 	LIGHTER_CODE = 0b00,
