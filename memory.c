@@ -19,8 +19,15 @@ void write8(u16 address, u8 val)
 	}
 	else if (address < 0xC000)
 		cartridge.mbc->write_mbc(address, val);
-	else if (address < 0xE000)
+	else if (address < 0xD000)
 		memory.work_ram[address - 0xC000] = val;
+	else if (address < 0xE000)
+	{
+		int bank_number = read8_absolute(WBK) & 0b111;
+		if (bank_number == 0)
+			bank_number = 1;
+		memory.work_ram[address - 0xC000 + 0x1000 * bank_number] = val;
+	}
 	else if (address < 0xFE00)
 		memory.echo_ram[address - 0xE000] = val;
 	else if (address < 0xFEA0)
@@ -69,11 +76,23 @@ void write8_absolute(u16 address, u8 val)
 	else if (address < 0x8000)
 		memory.rom_bank1[address - 0x4000] = val;
 	else if (address < 0xA000)
-		memory.video_ram[address - 0x8000] = val;
+	{
+		int offset = 0;
+		if (read8_absolute(VBK) & 1)
+			offset = 0x2000;
+		memory.video_ram[address - 0x8000 + offset] = val;
+	}
 	else if (address < 0xC000 && cartridge.ram)
 		(cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000] = val;
-	else if (address < 0xE000)
+	else if (address < 0xD000)
 		memory.work_ram[address - 0xC000] = val;
+	else if (address < 0xE000)
+	{
+		int bank_number = read8_absolute(WBK) & 0b111;
+		if (bank_number == 0)
+			bank_number = 1;
+		memory.work_ram[address - 0xC000 + 0x1000 * bank_number] = val;
+	}
 	else if (address < 0xFE00)
 		memory.echo_ram[address - 0xE000] = val;
 	else if (address < 0xFEA0)
@@ -123,8 +142,15 @@ u8 read8(u16 address)
 			return 0xFF;
 		return (cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000];
 	}
-	else if (address < 0xE000)
+	else if (address < 0xD000)
 		return memory.work_ram[address - 0xC000];
+	else if (address < 0xE000)
+	{
+		int bank_number = read8_absolute(WBK) & 0b111;
+		if (bank_number == 0)
+			bank_number = 1;
+		return memory.work_ram[address - 0xC000 + 0x1000 * bank_number];
+	}
 	else if (address < 0xFE00)
 		return memory.echo_ram[address - 0xE000];
 	else if (address < 0xFEA0)
@@ -159,11 +185,23 @@ u8 read8_absolute(u16 address)
 	else if (address < 0x8000)
 		return (cartridge.rom + 0x4000 * cartridge.mbc->selected_rom2_bank)[address - 0x4000];
 	else if (address < 0xA000)
-		return memory.video_ram[address - 0x8000];
+	{
+		int offset = 0;
+		if (read8_absolute(VBK) & 1)
+			offset = 0x2000;
+		return memory.video_ram[address - 0x8000 + offset];
+	}
 	else if (address < 0xC000)
 		return (cartridge.ram + 0x2000 * cartridge.mbc->selected_ram_bank)[address - 0xA000];
-	else if (address < 0xE000)
+	else if (address < 0xD000)
 		return memory.work_ram[address - 0xC000];
+	else if (address < 0xE000)
+	{
+		int bank_number = read8_absolute(WBK) & 0b111;
+		if (bank_number == 0)
+			bank_number = 1;
+		return memory.work_ram[address - 0xC000 + 0x1000 * bank_number];
+	}
 	else if (address < 0xFE00)
 		return memory.echo_ram[address - 0xE000];
 	else if (address < 0xFEA0)
