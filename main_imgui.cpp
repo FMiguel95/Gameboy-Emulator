@@ -115,6 +115,12 @@ void imgui_cpu()
 		ImGui::SameLine();
 		ImGui::Text("L:%02X", *cpu.reg8_L);
 
+		u8 reg_SYS = read8_absolute(SYS);
+		bool sys2 = get_flag(reg_SYS, 2);
+		ImGui::Checkbox("DMG mode", &sys2);
+		set_flag(&reg_SYS, 2, sys2);
+		write8_absolute(SYS, reg_SYS);
+
 		ImGui::TableSetColumnIndex(1);
 		// ImGui::Separator();
 		ImGui::Text("SP: %04X", cpu.reg16_SP);

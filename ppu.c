@@ -204,42 +204,104 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 	ret.color_code = LIGHTER_CODE;
 	ret.palette_index = LIGHTER_CODE;
 
-	if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
+	if (get_flag(read8_absolute(SYS), 2) == 0) // CGB mode
 	{
-		if (!*has_window)
+		if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
 		{
-			*has_window = 1;
-			ppu.window_line_counter++;
-			*x_pos = 0;
-			if ((int)(*ppu.wx) - 7 < 0)
-				*x_pos = -((int)(*ppu.wx) - 7);
+			if (!*has_window)
+			{
+				*has_window = 1;
+				ppu.window_line_counter++;
+				*x_pos = 0;
+				if ((int)(*ppu.wx) - 7 < 0)
+					*x_pos = -((int)(*ppu.wx) - 7);
+			}
+			// get tile id
+			u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
+			int tile_id_location = start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (*x_pos & 0xFF) / 8;
+			int tile_id = memory.video_ram[tile_id_location];
+			int tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
+			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+				tile_id += 256;
+			if (get_flag(tile_attributes, 3) == 1) // get tile from bank 1
+				tile_id += 0x180;
+			
+			// get tile data
+			tile t = tiles[tile_id];
+			int x_pixel = *x_pos % 8;
+			if (get_flag(tile_attributes, 5) == 1)
+				x_pixel = 7 - x_pixel;
+			int y_pixel = ppu.window_line_counter % 8;
+			if (get_flag(tile_attributes, 6) == 1)
+				y_pixel = 7 - y_pixel;
+			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
+			ret.color_code = get_palette_code(ret.palette_index, BGP);
 		}
-		// get tile id
-		u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
-		int tile_id = memory.video_ram[start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (*x_pos & 0xFF) / 8];
-		if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
-			tile_id += 256;
-		
-		// get tile data
-		tile t = tiles[tile_id];
-		ret.palette_index = get_pixel_code(t, *x_pos % 8, ppu.window_line_counter % 8);
-		ret.color_code = get_palette_code(ret.palette_index, BGP);
+		else // draw from background
+		{
+			// get tile id
+			u16 start_address = lcdc_flags->bg_tile_map ? 0x1C00 : 0x1800;
+			int tile_id_location = start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((*x_pos + *ppu.scx) & 0xFF) / 8;
+			int tile_id = memory.video_ram[tile_id_location];
+			int tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
+			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+				tile_id += 256;
+			if (get_flag(tile_attributes, 3) == 1) // get tile from bank 1
+				tile_id += 0x180;
+			
+			// get tile data
+			tile t = tiles[tile_id];
+			int x_pixel = (*x_pos + *ppu.scx) % 8;
+			if (get_flag(tile_attributes, 5) == 1)
+				x_pixel = 7 - x_pixel;
+			int y_pixel = (*ppu.ly + *ppu.scy) % 8;
+			if (get_flag(tile_attributes, 6) == 1)
+				y_pixel = 7 - y_pixel;
+			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
+			ret.color_code = get_palette_code(ret.palette_index, BGP);
+		}
+	
+		return ret;
 	}
-	else // draw from background
+	else // DMG compatibility mode
 	{
-		// get tile id
-		u16 start_address = lcdc_flags->bg_tile_map ? 0x1C00 : 0x1800;
-		int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((*x_pos + *ppu.scx) & 0xFF) / 8];
-		if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
-			tile_id += 256;
-		
-		// get tile data
-		tile t = tiles[tile_id];
-		ret.palette_index = get_pixel_code(t, (*x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
-		ret.color_code = get_palette_code(ret.palette_index, BGP);
+		if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
+		{
+			if (!*has_window)
+			{
+				*has_window = 1;
+				ppu.window_line_counter++;
+				*x_pos = 0;
+				if ((int)(*ppu.wx) - 7 < 0)
+					*x_pos = -((int)(*ppu.wx) - 7);
+			}
+			// get tile id
+			u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
+			int tile_id = memory.video_ram[start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (*x_pos & 0xFF) / 8];
+			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+				tile_id += 256;
+			
+			// get tile data
+			tile t = tiles[tile_id];
+			ret.palette_index = get_pixel_code(t, *x_pos % 8, ppu.window_line_counter % 8);
+			ret.color_code = get_palette_code(ret.palette_index, BGP);
+		}
+		else // draw from background
+		{
+			// get tile id
+			u16 start_address = lcdc_flags->bg_tile_map ? 0x1C00 : 0x1800;
+			int tile_id = memory.video_ram[start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((*x_pos + *ppu.scx) & 0xFF) / 8];
+			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
+				tile_id += 256;
+			
+			// get tile data
+			tile t = tiles[tile_id];
+			ret.palette_index = get_pixel_code(t, (*x_pos + *ppu.scx) % 8, (*ppu.ly + *ppu.scy) % 8);
+			ret.color_code = get_palette_code(ret.palette_index, BGP);
+		}
+	
+		return ret;
 	}
-
-	return ret;
 }
 
 pixel_info get_object_pixel_info(size_t i, u8 object_size)
@@ -266,6 +328,8 @@ pixel_info get_object_pixel_info(size_t i, u8 object_size)
 				y_pixel = max_height_index - y_pixel;
 
 			u8 tile_index = ppu.scanline_objects[j].tile_index;
+			if (get_flag(read8_absolute(SYS), 2) == 0 && get_flag(object_attributes, 3) == 1) // CGB mode & bank 1
+				tile_index += 0x180;
 			if (max_height_index == 15)
 			{
 				if (y_pixel < 8)
