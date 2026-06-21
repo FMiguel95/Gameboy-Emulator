@@ -56,23 +56,23 @@ extern "C" {
 # define BANK	0xFF50 // Boot ROM mapping control	W
 # define IE		0xFFFF // Interrupt enable	R/W
 
-# define SYS		0xFF4C // CPU mode select
-# define SPD		0xFF4D // Prepare speed switch
-# define VBK		0xFF4F // VRAM bank
-# define HDMA1		0xFF51 // VRAM DMA source high
-# define HDMA2		0xFF52 // VRAM DMA source low
-# define HDMA3		0xFF53 // VRAM DMA destination high
-# define HDMA4		0xFF54 // VRAM DMA destination low
-# define HDMA5		0xFF55 // VRAM DMA length/mode/start
-# define RP			0xFF56 // Infrared communications port
-# define BCPS_BGPI	0xFF68 // Background color palette specification / Background palette index
-# define BCPD_BGPD	0xFF69 // Background color palette data / Background palette data
-# define OCPS_OBPI	0xFF6A // OBJ color palette specification / OBJ palette index
-# define OCPD_OBPD	0xFF6B // OBJ color palette data / OBJ palette data
-# define OPRI		0xFF6C // Object priority mode
-# define WBK		0xFF70 // WRAM bank
-# define PCM12		0xFF76 // Audio digital outputs 1 & 2
-# define PCM34		0xFF77 // Audio digital outputs 3 & 4
+# define SYS	0xFF4C // CPU mode select
+# define SPD	0xFF4D // Prepare speed switch
+# define VBK	0xFF4F // VRAM bank
+# define HDMA1	0xFF51 // VRAM DMA source high
+# define HDMA2	0xFF52 // VRAM DMA source low
+# define HDMA3	0xFF53 // VRAM DMA destination high
+# define HDMA4	0xFF54 // VRAM DMA destination low
+# define HDMA5	0xFF55 // VRAM DMA length/mode/start
+# define RP		0xFF56 // Infrared communications port
+# define BGPI	0xFF68 // Background palette index
+# define BGPD	0xFF69 // Background palette data
+# define OBPI	0xFF6A // OBJ palette index
+# define OBPD	0xFF6B // OBJ palette data
+# define OPRI	0xFF6C // Object priority mode
+# define WBK	0xFF70 // WRAM bank
+# define PCM12	0xFF76 // Audio digital outputs 1 & 2
+# define PCM34	0xFF77 // Audio digital outputs 3 & 4
 
 typedef struct {
 	// u8 rom_bank0[0x4000];	// 0000 - 3FFF
@@ -89,6 +89,10 @@ typedef struct {
 	u8 io_registers[0x80];		// FF00 - FF7F
 	u8 high_ram[0x7F];			// FF80 - FFFE
 	u8 ie_register[0x1];		// FFFF
+
+	u8 palettes_background[64];	// 2 bytes/color × 4 colors/palette × 8 palettes = 64 bytes
+	u8 palettes_objects[64];	// 2 bytes/color × 4 colors/palette × 8 palettes = 64 bytes
+
 } memory_t;
 
 extern memory_t memory;

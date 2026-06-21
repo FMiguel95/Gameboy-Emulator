@@ -201,13 +201,14 @@ void oam_scan()
 pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_window, size_t* x_pos)
 {
 	pixel_info ret;
-	ret.color_code = LIGHTER_CODE;
-	ret.palette_index = LIGHTER_CODE;
+	ret.color_code = pixel_index_0;
+	ret.palette_index = pixel_index_0;
 
 	if (get_flag(read8_absolute(SYS), 2) == 0) // CGB mode
 	{
 		if (lcdc_flags->window_enable && ppu.wy_equaled_ly && (int)i >= (int)(*ppu.wx) - 7) // draw from window
 		{
+			ret.tile_type = tile_window;
 			if (!*has_window)
 			{
 				*has_window = 1;
@@ -220,19 +221,19 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 			u16 start_address = lcdc_flags->window_tile_map ? 0x1C00 : 0x1800;
 			int tile_id_location = start_address + 32 * ((ppu.window_line_counter & 0xFF) / 8) + (*x_pos & 0xFF) / 8;
 			int tile_id = memory.video_ram[tile_id_location];
-			int tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
+			ret.tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
 			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
 				tile_id += 256;
-			if (get_flag(tile_attributes, 3) == 1) // get tile from bank 1
+			if (get_flag(ret.tile_attributes, 3) == 1) // get tile from bank 1
 				tile_id += 0x180;
 			
 			// get tile data
 			tile t = tiles[tile_id];
 			int x_pixel = *x_pos % 8;
-			if (get_flag(tile_attributes, 5) == 1)
+			if (get_flag(ret.tile_attributes, 5) == 1)
 				x_pixel = 7 - x_pixel;
 			int y_pixel = ppu.window_line_counter % 8;
-			if (get_flag(tile_attributes, 6) == 1)
+			if (get_flag(ret.tile_attributes, 6) == 1)
 				y_pixel = 7 - y_pixel;
 			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
 			ret.color_code = get_palette_code(ret.palette_index, BGP);
@@ -240,22 +241,23 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 		else // draw from background
 		{
 			// get tile id
+			ret.tile_type = tile_background;
 			u16 start_address = lcdc_flags->bg_tile_map ? 0x1C00 : 0x1800;
 			int tile_id_location = start_address + 32 * (((*ppu.ly + *ppu.scy) & 0xFF) / 8) + ((*x_pos + *ppu.scx) & 0xFF) / 8;
 			int tile_id = memory.video_ram[tile_id_location];
-			int tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
+			ret.tile_attributes = memory.video_ram[0x2000 + tile_id_location]; // same location as tile in bank 1
 			if (lcdc_flags->tile_data_select == 0 && tile_id < 128)
 				tile_id += 256;
-			if (get_flag(tile_attributes, 3) == 1) // get tile from bank 1
+			if (get_flag(ret.tile_attributes, 3) == 1) // get tile from bank 1
 				tile_id += 0x180;
 			
 			// get tile data
 			tile t = tiles[tile_id];
 			int x_pixel = (*x_pos + *ppu.scx) % 8;
-			if (get_flag(tile_attributes, 5) == 1)
+			if (get_flag(ret.tile_attributes, 5) == 1)
 				x_pixel = 7 - x_pixel;
 			int y_pixel = (*ppu.ly + *ppu.scy) % 8;
-			if (get_flag(tile_attributes, 6) == 1)
+			if (get_flag(ret.tile_attributes, 6) == 1)
 				y_pixel = 7 - y_pixel;
 			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
 			ret.color_code = get_palette_code(ret.palette_index, BGP);
@@ -307,8 +309,8 @@ pixel_info get_bg_win_pixel_info(LCD_control* lcdc_flags, size_t i, int* has_win
 pixel_info get_object_pixel_info(size_t i, u8 object_size)
 {
 	pixel_info ret;
-	ret.color_code = LIGHTER_CODE;
-	ret.palette_index = LIGHTER_CODE;
+	ret.color_code = palette_code_0;
+	ret.palette_index = pixel_index_0;
 
 	u8 selected_x_pos = 0xFF;
 	u8 max_height_index = object_size ? 15 : 7;
@@ -318,36 +320,33 @@ pixel_info get_object_pixel_info(size_t i, u8 object_size)
 		int sprite_screen_y_pos = (int)(ppu.scanline_objects[j].y_pos) - 16;
 		if ((int)i >= sprite_screen_x_pos && (int)i < sprite_screen_x_pos + 8)
 		{
-			u8 object_attributes = ppu.scanline_objects[j].attributes;
+			ret.tile_attributes = ppu.scanline_objects[j].attributes;
 
 			u8 x_pixel = i - sprite_screen_x_pos;
 			u8 y_pixel = *ppu.ly - sprite_screen_y_pos;
-			if (get_flag(object_attributes, 5))
+			if (get_flag(ret.tile_attributes, 5))
 				x_pixel = 7 - x_pixel;
-			if (get_flag(object_attributes, 6))
+			if (get_flag(ret.tile_attributes, 6))
 				y_pixel = max_height_index - y_pixel;
 
 			u8 tile_index = ppu.scanline_objects[j].tile_index;
-			if (get_flag(read8_absolute(SYS), 2) == 0 && get_flag(object_attributes, 3) == 1) // CGB mode & bank 1
-				tile_index += 0x180;
 			if (max_height_index == 15)
 			{
 				if (y_pixel < 8)
 					tile_index &= 0xFE;
-				// else
-				// 	tile_index |= 0x01;
 			}
+			if (get_flag(read8_absolute(SYS), 2) == 0 && get_flag(ret.tile_attributes, 3) == 1) // CGB mode & bank 1
+				tile_index += 0x180;
 			tile t = tiles[tile_index];
 			
-			pixel_code palette_index = get_pixel_code(t, x_pixel, y_pixel);
-			if (palette_index == LIGHTER_CODE || selected_x_pos <= ppu.scanline_objects[j].x_pos)
+			pixel_index palette_index = get_pixel_code(t, x_pixel, y_pixel);
+			if (palette_index == pixel_index_0 || selected_x_pos <= ppu.scanline_objects[j].x_pos)
 				continue;
 			selected_x_pos = ppu.scanline_objects[j].x_pos;
 			ret.palette_index = get_pixel_code(t, x_pixel, y_pixel);
-			u8 palette_bit = get_flag(object_attributes, 4);
+			u8 palette_bit = get_flag(ret.tile_attributes, 4);
 			u16 palette_address = palette_bit ? OBP1 : OBP0;
 			ret.color_code = get_palette_code(ret.palette_index, palette_address);
-			ret.object_attributes = object_attributes;
 		}
 	}
 	return ret;
@@ -372,20 +371,36 @@ void draw_scanline()
 		pixel_info object_pixel_info = get_object_pixel_info(i, lcdc_flags.object_size);
 		pixel_info bg_win_pixel_info = get_bg_win_pixel_info(&lcdc_flags, i, &has_window, &x_pos);
 
-		pixel_code final_pixel_code = LIGHTER_CODE;
+		pixel_info winner = (pixel_info){0};
 
-		if (lcdc_flags.object_enable && object_pixel_info.palette_index != LIGHTER_CODE) // if objects are enabled and pixel isn't transparent
+		if (lcdc_flags.object_enable && object_pixel_info.palette_index != pixel_index_0) // if objects are enabled and pixel isn't transparent
 		{
 			// if bg is enabled and priority is set and color isn't 0 draw bg instead
-			if (lcdc_flags.bg_window_enable && get_flag(object_pixel_info.object_attributes, 7) == 1 && bg_win_pixel_info.palette_index != LIGHTER_CODE)
-				final_pixel_code = bg_win_pixel_info.color_code;
+			if (lcdc_flags.bg_window_enable && get_flag(object_pixel_info.tile_attributes, 7) == 1 && bg_win_pixel_info.palette_index != pixel_index_0)
+				winner = bg_win_pixel_info;
 			else // draw object
-				final_pixel_code = object_pixel_info.color_code;
+				winner = object_pixel_info;
 		}
 		else if (lcdc_flags.bg_window_enable) // just draw background if it's enabled
-			final_pixel_code = bg_win_pixel_info.color_code;
+			winner = bg_win_pixel_info;
 
-		ppu.pixel_buffer_private[*ppu.ly * 160 + i] = get_color(final_pixel_code);
+		int palette_number;
+		if (get_flag(read8_absolute(SYS), 2) == 0) // CGB mode
+			palette_number = winner.tile_attributes & 0b111;
+		else
+		{
+			if (winner.tile_type == tile_object)
+				palette_number = get_flag(winner.tile_attributes, 4);
+			else
+				palette_number = 0;
+		}
+		u16 rgb555;
+		if (winner.tile_type == tile_object)
+			rgb555 = *(u16*)(memory.palettes_objects + palette_number * 8 + winner.palette_index * 2);
+		else
+			rgb555 = *(u16*)(memory.palettes_background + palette_number * 8 + winner.palette_index * 2);
+
+		ppu.pixel_buffer_private[*ppu.ly * 160 + i] = rgb555_to_rgb888(rgb555);
 		x_pos++;
 	}
 }

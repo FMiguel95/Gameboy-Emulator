@@ -23,7 +23,7 @@ int convert_tile_index(u8 index)
 	return converted_index;
 }
 
-pixel_code get_pixel_code(tile t, int x, int y)
+pixel_index get_pixel_code(tile t, int x, int y)
 {
 	u8 bit_index = 7 - x;
 	u8 val1 = (*(t + y * 2) >> bit_index) & 1;
@@ -31,25 +31,34 @@ pixel_code get_pixel_code(tile t, int x, int y)
 	return (val2 << 1) | val1;
 }
 
-pixel_code get_palette_code(pixel_code code, u16 data_address)
+palette_code get_palette_code(pixel_index code, u16 data_address)
 {
 	u8 palette_data = read8_absolute(data_address);
 	return (palette_data >> (code * 2)) & 0b11;
 }
 
-pixel_color get_color(pixel_code code)
+pixel_color get_color(palette_code code)
 {
 	switch (code) {
-		case LIGHTER_CODE:
+		case palette_code_0:
 			return LIGHTER_COLOR;
-		case LIGHT_CODE:
+		case palette_code_1:
 			return LIGHT_COLOR;
-		case DARK_CODE:
+		case palette_code_2:
 			return DARK_COLOR;
-		case DARKER_CODE:
+		case palette_code_3:
 			return DARKER_COLOR;
 		default:
 			printf("invalid color code\n");
 			return LIGHTER_COLOR;
 	}
+}
+
+int rgb555_to_rgb888(u16 rgb555)
+{
+	int r = rgb555 << 3 & 0b11111000;
+	int g = rgb555 >> 2 & 0b11111000;
+	int b = rgb555 >> 7 & 0b11111000;
+
+	return ((r << 16) | (g << 8) | (b << 0));
 }

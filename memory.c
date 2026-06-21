@@ -58,6 +58,28 @@ void write8(u16 address, u8 val)
 			apu.ch4_request_trigger = 1;
 		else if (address == DMA)
 			return oam_dma_transfer(val);
+		else if (address == BGPD)
+		{
+			int palette_index = memory.io_registers[0x68] & 0b111111;
+			memory.palettes_background[palette_index] = val;
+			if (get_flag(memory.io_registers[0x68], 7) == 1)
+			{
+				palette_index = (palette_index + 1) & 0b111111;
+				memory.io_registers[0x68] = 0b10000000 | palette_index;
+			}
+			return;
+		}
+		else if (address == OBPD)
+		{
+			int palette_index = memory.io_registers[0x6A] & 0b111111;
+			memory.palettes_objects[palette_index] = val;
+			if (get_flag(memory.io_registers[0x6A], 7) == 1)
+			{
+				palette_index = (palette_index + 1) & 0b111111;
+				memory.io_registers[0x6A] = 0b10000000 | palette_index;
+			}
+			return;
+		}
 		memory.io_registers[address - 0xFF00] = val;
 	}
 	else if (address < 0xFFFF)
@@ -168,6 +190,10 @@ u8 read8(u16 address)
 	{
 		if (address == STAT)
 			return memory.io_registers[address - 0xFF00] | 0b10000000;
+		else if (address == BGPD)
+			return memory.palettes_background[memory.io_registers[0x68] & 0b111111];
+		else if (address == OBPD)
+			return memory.palettes_objects[memory.io_registers[0x6A] & 0b111111];
 		return memory.io_registers[address - 0xFF00];
 	}
 	else if (address < 0xFFFF)

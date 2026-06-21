@@ -355,6 +355,90 @@ void imgui_ppu()
 	ImGui::End();
 }
 
+static void imgui_palette_dmg(const char* label, u16 palette_address)
+{
+	float colors_float[3];
+	int rgb_color;
+	char label_numbered[1024];
+	size_t label_length = strlen(label);
+
+	strcpy(label_numbered, label);
+	label_numbered[label_length] = '_';
+	label_numbered[label_length + 2] = '\0';
+
+	ImGui::Text(label);
+	
+	for (size_t i = 0; i < 4; i++)
+	{
+		rgb_color = get_color(get_palette_code((pixel_index)i, palette_address));
+		colors_float[0] = (rgb_color >> 16 & 0xFF) / 255.0f;
+		colors_float[1] = (rgb_color >>  8 & 0xFF) / 255.0f;
+		colors_float[2] = (rgb_color >>  0 & 0xFF) / 255.0f;
+		ImGui::SameLine();
+		label_numbered[label_length + 1] = i + '0';
+		ImGui::ColorEdit3(label_numbered, colors_float, ImGuiColorEditFlags_NoPicker |ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoLabel);
+	}
+}
+static void imgui_palette_cgb(const char* label, u8* palette_address)
+{
+	float colors_float[3];
+	u16 rgb_color16;
+	char label_numbered[1024];
+	size_t label_length = strlen(label);
+
+	strcpy(label_numbered, label);
+	label_numbered[label_length] = '_';
+	label_numbered[label_length + 2] = '\0';
+
+	ImGui::Text(label);
+	
+	for (size_t i = 0; i < 4; i++)
+	{
+		rgb_color16 = *((u16*)(palette_address + i * 2)) & 0x7FFF;
+		colors_float[0] = (rgb_color16 >>  0 & 0b11111) / 31.0f;
+		colors_float[1] = (rgb_color16 >>  5 & 0b11111) / 31.0f;
+		colors_float[2] = (rgb_color16 >> 10 & 0b11111) / 31.0f;
+		// colors_float[0] = (rgb_color16 >>  8 & 0b11111) / 31.0f;
+		// colors_float[1] = (((rgb_color16 & 0b11) << 3) | (rgb_color16 >>  13 & 0b111)) / 31.0f;
+		// colors_float[2] = (rgb_color16 >>  2 & 0b11111) / 31.0f;
+		// colors_float[0] = (memory.palettes_background[0] & 0b11111) / 31.0f;
+		// colors_float[1] = (((memory.palettes_background[1] & 0b11) << 3) | (memory.palettes_background[0] >> 5 & 0b111)) / 31.0f;
+		// colors_float[2] = ((memory.palettes_background[1] >> 2) & 0b11111) / 31.0f;
+		ImGui::SameLine();
+		label_numbered[label_length + 1] = i + '0';
+		ImGui::ColorEdit3(label_numbered, colors_float, ImGuiColorEditFlags_NoPicker |ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoLabel);
+	}
+}
+void imgui_palettes()
+{
+	if (ImGui::Begin("Color Palettes"))
+	{		
+		for (size_t i = 0; i < 8; i++)
+		{
+			char label[5];
+			strcpy(label, "BGP");
+			label[3] = i + '0';
+			label[4] = '\0';
+			imgui_palette_cgb(label, memory.palettes_background + i * 8);
+		}
+		for (size_t i = 0; i < 8; i++)
+		{
+			char label[5];
+			strcpy(label, "OBP");
+			label[3] = i + '0';
+			label[4] = '\0';
+			imgui_palette_cgb(label, memory.palettes_objects + i * 8);
+		}
+		
+		ImGui::Separator();
+		
+		imgui_palette_dmg("BGP ", BGP);
+		imgui_palette_dmg("OBP0", OBP0);
+		imgui_palette_dmg("OBP1", OBP1);
+	}
+	ImGui::End();
+}
+
 void imgui_apu()
 {
 	if (ImGui::Begin("APU"))
@@ -529,8 +613,8 @@ void imgui_vram0(SDL_Texture* tex_vram)
 				size_t tile_x = x / 8;
 				size_t tile_y = y / 8;
 				size_t tile_index = tile_y * tiles_per_row + tile_x;
-				pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
-				pixel_color color = get_color(color_code);
+				pixel_index color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
+				pixel_color color = get_color((palette_code)color_code);
 
 				tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
 			}
@@ -554,8 +638,8 @@ void imgui_vram1(SDL_Texture* tex_vram)
 				size_t tile_x = x / 8;
 				size_t tile_y = y / 8;
 				size_t tile_index = tile_y * tiles_per_row + tile_x;
-				pixel_code color_code = get_pixel_code(tiles[tile_index + 0x180], x % 8, y % 8);
-				pixel_color color = get_color(color_code);
+				pixel_index color_code = get_pixel_code(tiles[tile_index + 0x180], x % 8, y % 8);
+				pixel_color color = get_color((palette_code)color_code);
 
 				tex_vram_pixels[y * WIN_VRAM_SIZE_X + x] = color;
 			}
@@ -590,8 +674,8 @@ void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 			{
 				u8 tile_id = memory.video_ram[0x1800 + (y / 8) * tiles_per_row + (x / 8)];
 				tile t = tiles[convert_tile_index(tile_id)];
-				pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
-				pixel_color color = get_color(color_code);
+				pixel_index color_code = get_pixel_code(t, x % 8, y % 8);
+				pixel_color color = get_color((palette_code)color_code);
 
 				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
 			}
@@ -617,8 +701,8 @@ void imgui_maps(SDL_Texture* tex_map9800, SDL_Texture* tex_map9C00)
 			{
 				u8 tile_id = memory.video_ram[0x1C00 + (y / 8) * tiles_per_row + (x / 8)];
 				tile t = tiles[convert_tile_index(tile_id)];
-				pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
-				pixel_color color = get_color(color_code);
+				pixel_index color_code = get_pixel_code(t, x % 8, y % 8);
+				pixel_color color = get_color((palette_code)color_code);
 
 				tex_map_pixels[y * WIN_BACKGROUND_SIZE_X + x] = color;
 			}
@@ -686,14 +770,14 @@ int main(int ac, char** av)
 	set_window_icon(window);
 	SDL_ShowWindow(window);
 
-	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_Texture* tex_screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 	SDL_SetTextureScaleMode(tex_screen, SDL_SCALEMODE_NEAREST);
-	SDL_Texture* tex_screen_next = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
+	SDL_Texture* tex_screen_next = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_SCREEN_SIZE_X, WIN_SCREEN_SIZE_Y);
 	SDL_SetTextureScaleMode(tex_screen_next, SDL_SCALEMODE_NEAREST);
-	SDL_Texture* tex_vram0 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
-	SDL_Texture* tex_vram1 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
-	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
-	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	SDL_Texture* tex_vram0 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	SDL_Texture* tex_vram1 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_VRAM_SIZE_X, WIN_VRAM_SIZE_Y);
+	SDL_Texture* tex_map9800 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
+	SDL_Texture* tex_map9C00 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRX32, SDL_TEXTUREACCESS_STREAMING, WIN_BACKGROUND_SIZE_X, WIN_BACKGROUND_SIZE_Y);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -741,7 +825,7 @@ int main(int ac, char** av)
 
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	bool fullscreen = true;
+	bool fullscreen = false;
 	long next_frame_time = get_current_time();
 	while (!emulator.quit)
 	{
@@ -877,6 +961,7 @@ int main(int ac, char** av)
 			imgui_timers();
 			imgui_screen(tex_screen, tex_screen_next);
 			imgui_ppu();
+			imgui_palettes();
 			imgui_apu();
 			imgui_vram0(tex_vram0);
 			imgui_vram1(tex_vram1);

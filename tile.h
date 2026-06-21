@@ -14,11 +14,18 @@ typedef u8* tile;
 extern tile tiles[0x300];
 
 typedef enum {
-	LIGHTER_CODE = 0b00,
-	LIGHT_CODE = 0b01,
-	DARK_CODE = 0b10,
-	DARKER_CODE = 0b11
-} pixel_code;
+	pixel_index_0 = 0,
+	pixel_index_1 = 1,
+	pixel_index_2 = 2,
+	pixel_index_3 = 3
+} pixel_index;
+
+typedef enum {
+	palette_code_0 = 0,
+	palette_code_1 = 1,
+	palette_code_2 = 2,
+	palette_code_3 = 3
+} palette_code;
 
 typedef enum {
 	LIGHTER_COLOR = 0xE0F8D0,
@@ -27,21 +34,30 @@ typedef enum {
 	DARKER_COLOR = 0x081820
 } pixel_color;
 
+typedef enum {
+	tile_background,
+	tile_window,
+	tile_object
+} tile_type;
+
 typedef struct {
-	pixel_code palette_index;
-	pixel_code color_code;
-	u8 object_attributes;
+	tile_type tile_type;
+	pixel_index palette_index;
+	palette_code color_code;
+	u8 tile_attributes;
 } pixel_info;
 
 int init_tiles();
 
 int convert_tile_index(u8 index);
 
-pixel_code get_pixel_code(tile t, int x, int y);
+pixel_index get_pixel_code(tile t, int x, int y);
 
-pixel_code get_palette_code(pixel_code code, u16 data_address);
+palette_code get_palette_code(pixel_index code, u16 data_address);
 
-pixel_color get_color(pixel_code code);
+pixel_color get_color(palette_code code);
+
+int rgb555_to_rgb888(u16 rgb555);
 
 #ifdef __cplusplus
 }

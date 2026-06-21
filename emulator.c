@@ -244,7 +244,7 @@ long get_current_time()
 // 			size_t tile_x = x / 8;
 // 			size_t tile_y = y / 8;
 // 			size_t tile_index = tile_y * tiles_per_row + tile_x;
-// 			pixel_code color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
+// 			pixel_index color_code = get_pixel_code(tiles[tile_index], x % 8, y % 8);
 // 			pixel_color color = get_color(color_code);
 
 // 			((int*)emulator.window_tiles.screen_surface->pixels)[y * WIN_VRAM_SIZE_X + x] = color;
@@ -263,7 +263,7 @@ long get_current_time()
 // 		{
 // 			u8 tile_id = memory.video_ram[start_address + (y / 8) * tiles_per_row + (x / 8)];
 // 			tile t = tiles[convert_tile_index(tile_id)];
-// 			pixel_code color_code = get_pixel_code(t, x % 8, y % 8);
+// 			pixel_index color_code = get_pixel_code(t, x % 8, y % 8);
 // 			pixel_color color = get_color(color_code);
 
 // 			((int*)(window->screen_surface->pixels))[y * WIN_BACKGROUND_SIZE_X + x] = color;
